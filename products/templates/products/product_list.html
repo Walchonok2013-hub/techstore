@@ -1,0 +1,75 @@
+{% load static %}
+
+<div class="container">
+    <h1>Каталог товаров</h1>
+
+    {% if products %}
+        <div class="row g-4">
+            {% for product in products %}
+                <div class="col-md-4 col-sm-6 col-12">
+                    <div class="card h-100 shadow">
+                <!-- Изображение товара -->
+                <div class="card-img-top position-relative">
+                    <img
+                src="{% if product.image %}{{ product.image.url }}{% else %}{% static 'images/no-image.jpg' %}{% endif %}"
+                class="w-100"
+                alt="{{ product.name|default:"Изображение товара" }}"
+                style="object-fit: cover; height: 200px;"
+                loading="lazy"
+            >
+            <!-- Значок "В наличии" -->
+            {% if product.in_stock %}
+                <span class="position-absolute top-0 start-0 bg-success text-white rounded p-1 fw-bold">В наличии</span>
+            {% else %}
+                <span class="position-absolute top-0 start-0 bg-danger text-white rounded p-1 fw-bold">Нет в наличии</span>
+            {% endif %}
+        </div>
+
+        <!-- Информация о товаре -->
+        <div class="card-body d-flex flex-column">
+            <h5 class="card-title">{{ product.name }}</h5>
+            <p class="card-text text-muted">{{ product.description|truncatechars:100 }}</p>
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <span class="fw-bold text-primary">{{ product.price }} ₽</span>
+                {% if product.discount %}
+                    <span class="text-danger fw-bold">{{ product.discount }}% скидка</span>
+                {% endif %}
+            </div>
+
+            <!-- Кнопки действий -->
+            <div class="d-flex gap-2 mt-auto">
+                <a
+                    href="{% url 'products:product_detail' product.id product.slug %}"
+            class="btn btn-outline-primary flex-grow-1"
+            aria-label="Подробнее о товаре {{ product.name }}"
+        >
+            Подробнее
+        </a>
+
+        
+<form action="{% url 'cart:cart_add' product.id %}" method="post" class="w-100">
+            {% csrf_token %}
+            <input
+                type="hidden"
+                name="quantity"
+                value="1"
+            >
+            <input type="hidden" name="update" value="false">
+            <button
+                type="submit"
+                class="btn btn-success w-100"
+                aria-label="Добавить {{ product.name }} в корзину"
+                {% if not product.in_stock %}disabled{% endif %}
+            >
+                В корзину
+            </button>
+        </form>
+    </div>
+</div>
+</div>
+{% empty %}
+<p>В каталоге пока нет товаров.</p>
+{% endfor %}
+</div>
+{% endif %}
+</div>

@@ -1,0 +1,96 @@
+{% extends 'base.html' %}
+{% block title %}Способы оплаты — Techstore{% endblock %}
+
+{% block content %}
+<div class="container my-5">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>Способы оплаты</h1>
+        <a href="#" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addCardModal">
+            <i class="bi bi-plus"></i> Добавить карту
+        </a>
+    </div>
+
+    {% if payment_methods %}
+        <div class="row g-4">
+            {% for method in payment_methods %}
+            <div class="col-12 col-md-6">
+                <div class="card border-0 shadow-sm h-100">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-start mb-3">
+                            <div>
+                                <h5 class="card-title mb-0">
+                    {% if method.card_type == 'visa' %}
+                <i class="bi bi-credit-card text-primary"></i> Visa
+            {% elif method.card_type == 'mastercard' %}
+                <i class="bi bi-credit-card text-orange"></i> MasterCard
+            {% else %}
+                <i class="bi bi-credit-card text-muted"></i> Карта
+            {% endif %}
+                </h5>
+                <small class="text-muted">**** **** **** {{ method.last_digits }}</small>
+            </div>
+            {% if method.is_default %}
+                <span class="badge bg-primary">По умолчанию</span>
+            {% endif %}
+        </div>
+
+        <div class="d-flex gap-2">
+            {% if not method.is_default %}
+                <button class="btn btn-sm btn-outline-primary">Сделать основной</button>
+            {% endif %}
+            <button class="btn btn-sm btn-outline-danger" onclick="deleteCard({{ method.id }})">Удалить</button>
+        </div>
+    </div>
+</div>
+            </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="text-center py-5">
+            <i class="bi bi-credit-card fs-1 text-muted"></i>
+            <h4 class="mt-3 text-muted">Способы оплаты не добавлены</h4>
+            <p class="text-muted">Добавьте банковскую карту для быстрой оплаты заказов.</p>
+        </div>
+    {% endif %}
+
+    <!-- Модальное окно добавления карты -->
+    <div class="modal fade" id="addCardModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Добавить банковскую карту</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form>
+                <div class="mb-3">
+                    <label class="form-label">Номер карты</label>
+            <input type="text" class="form-control" placeholder="1234 5678 9012 3456" required>
+                </div>
+                <div class="row">
+            <div class="col-md-6 mb-3">
+                <label class="form-label">Срок действия</label>
+                <input type="text" class="form-control" placeholder="ММ/ГГ" required>
+            </div>
+            <div class="col-md-6 mb-3">
+                <label class="form-label">CVV</label>
+                <input type="text" class="form-control" placeholder="123" required>
+            </div>
+        </div>
+        <div class="mb-3 form-check">
+            <input class="form-check-input" type="checkbox" id="setAsDefault">
+            <label class="form-check-label" for="setAsDefault">
+                Сделать картой по умолчанию
+            </label>
+        </div>
+    </form>
+</div>
+<div class="modal-footer">
+    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+    <button type="submit" class="btn btn-primary">Добавить карту</button>
+</div>
+</div>
+</div>
+</div>
+</div>
+{% endblock %}

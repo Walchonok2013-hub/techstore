@@ -1,0 +1,10 @@
+<div class="cart-info d-flex align-items-center">
+    <i class="fas fa-shopping-cart me-2"></i>
+    {% if cart_count > 0 %}
+        <a href="{% url 'cart:cart_detail' %}" class="text-decoration-none">
+            {{ cart_count }} товар(ов) — {{ cart_total }} руб.
+        </a>
+    {% else %}
+        Корзина пуста
+    {% endif %}
+</div>

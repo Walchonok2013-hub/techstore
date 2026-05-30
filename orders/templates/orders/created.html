@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+
+
+{% block title %}Заказ №{{ order_id }} создан{% endblock %}
+
+
+{% block content %}
+<div class="container mt-4">
+    <div class="alert alert-success text-center">
+        <h2>🎉 Заказ успешно создан!</h2>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <h3>Информация о заказе</h3>
+        </div>
+        <div class="card-body">
+            <p><strong>Номер заказа:</strong> №{{ order_id }}</p>
+            <p><strong>Дата создания:</strong> {{ order.created_at|date:"d.m.Y H:i" }}</p>
+            <p><strong>Статус:</strong> Ожидает подтверждения</p>
+
+            {% if order.total_cost %}
+                <p><strong>Общая сумма:</strong> {{ order.total_cost }} руб.</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="mt-4 text-center">
+        <a href="{% url 'orders:order_confirmation' order_id %}" class="btn btn-primary btn-lg">
+            Детали заказа
+        </a>
+        <h1>Ваш заказ №{{ order_id }} успешно создан!</h1>
+<p>Спасибо за покупку!</p>
+        <a href="{% url 'products:product_list' %}" class="btn btn-outline-secondary btn-lg">
+            Продолжить покупки
+        </a>
+        <a href="{% url 'orders:user_orders' %}" class="btn btn-outline-info btn-lg">
+            Мои заказы
+        </a>
+    </div>
+</div>
+{% endblock %}

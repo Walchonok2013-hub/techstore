@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Корзина{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1>Корзина</h1>
+    {% include "carts/includes/included_cart.html" %}
+</div>
+{% endblock %}

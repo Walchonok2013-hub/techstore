@@ -1,0 +1,46 @@
+
+{% extends "base.html" %}
+{% block title %}Профиль пользователя{% endblock %}
+
+{% block page_title %}Ваш профиль{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="profile-card card">
+        <div class="card-header">
+            <h2 class="card-title">Информация о пользователе</h2>
+        </div>
+
+        <div class="card-body">
+            {% if user.is_authenticated %}
+                <div class="profile-info">
+                    <p><strong>Имя пользователя:</strong> {{ user.username }}</p>
+
+            <p>
+                <strong>Email:</strong>
+                {% if user.email %}
+                    {{ user.email }}
+                {% else %}
+                    <span class="text-muted">Не указан</span>
+                {% endif %}
+            </p>
+
+            <p><strong>Дата регистрации:</strong> {{ user.date_joined|date:"d.m.Y H:i" }}</p>
+
+            {% if user.last_login %}
+                <p><strong>Последний вход:</strong> {{ user.last_login|date:"d.m.Y H:i" }}</p>
+            {% endif %}
+        </div>
+
+        <div class="profile-actions mt-4">
+            <a href="{% url 'user:logout' %}" class="btn btn-danger">Выйти</a>
+            <a href="#" class="btn btn-primary">Редактировать профиль</a>
+        </div>
+    {% else %}
+        <div class="alert alert-warning">
+            Для просмотра профиля необходимо <a href="{% url 'user:login' %}" class="alert-link">войти в систему</a>.
+        </div>
+    {% endif %}
+</div>
+</div>
+{% endblock %}

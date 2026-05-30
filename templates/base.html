@@ -1,0 +1,165 @@
+{% load static %}
+{% load cache %}
+{% load category_tags %}
+{% load user_carts %}
+
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Магазин техники{% endblock %}</title>
+
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    <header>
+        <nav class="navbar navbar-expand-lg bg-dark" data-bs-theme="dark">
+            <div class="container">
+
+<a class="navbar-brand" href="{% url 'products:home' %}">Techstore</a>
+                <!-- Блок категорий -->
+                <div class="dropdown me-auto">
+                    <button class="btn btn-secondary dropdown-toggle btn-dark" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        Категории товаров
+                    </button>
+                    <ul class="dropdown-menu bg-dark" data-bs-theme="dark">
+                {% cache 60 products_categories %}
+                    {% tag_categories as categories %}
+                {% for category in categories %}
+                    <li><a class="dropdown-item text-white" href="{% url 'products:category_detail' category.slug %}">{{ category.name }}</a></li>
+                {% endfor %}
+                {% endcache %}
+            </ul>
+                </div>
+
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Переключить навигацию">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+
+                <div class="collapse navbar-collapse" id="navbarSupportedContent">
+                    <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle text-white" href="#" role="button"
+                       data-bs-toggle="dropdown" aria-expanded="false">
+                Информация
+            </a>
+            <ul class="dropdown-menu">
+                <li><a class="dropdown-item" href="#">Доставка и оплата</a></li>
+                <li><a class="dropdown-item" href="#">Контактная информация</a></li>
+                <li><a class="dropdown-item" href="{% url 'main:about' %}">Про нас</a></li>
+            </ul>
+                </li>
+            </ul>
+
+            <form class="d-flex" role="search" action="{% url 'products:search' %}" method="get">
+                <input class="form-control me-2" type="search" name="q" placeholder="Поиск" aria-label="Поиск">
+                <button class="btn btn-outline-success text-white" type="submit">Поиск</button>
+            </form>
+
+            <!-- Блок авторизации -->
+            <ul class="navbar-nav ms-auto">
+                {% if not user.is_authenticated %}
+                <li class="nav-item">
+                    <a class="nav-link text-white" href="{% url 'accounts:login' %}">Войти</a>
+                </li>
+                <li class="nav-item">
+            <a class="nav-link text-white" href="{% url 'accounts:register' %}">Регистрация</a>
+                </li>
+                {% else %}
+                <li class="nav-item dropdown">
+            <a class="nav-link dropdown-toggle text-white" href="#" role="button"
+               data-bs-toggle="dropdown" aria-expanded="false">
+                Мой профиль ({{ user.username }})
+            </a>
+            <ul class="dropdown-menu">
+                <li><a class="dropdown-item" href="{% url 'cart:cart_detail' %}">Корзина</a></li>
+                <li><a class="dropdown-item" href="{% url 'accounts:profile' %}">Личный кабинет</a></li>
+                {% if user.is_staff %}
+                <li><a class="dropdown-item" href="{% url 'admin:index' %}">Админ панель</a></li>
+                {% endif %}
+                <li>
+                    <hr class="dropdown-divider">
+                </li>
+                <li>
+            <form action="{% url 'accounts:logout' %}" method="post" class="m-0">
+                {% csrf_token %}
+                <button type="submit" class="dropdown-item">Выйти</button>
+            </form>
+                </li>
+            </ul>
+                </li>
+                {% endif %}
+            </ul>
+        </div>
+    </div>
+</nav>
+    </header>
+
+    <div class="container mt-5">
+        <div class="row">
+            <!-- Контент страницы -->
+            <div class="col-lg-9">
+                <!-- Уведомления -->
+                {% include "includes/notifications.html" %}
+                
+{% if messages %}
+<div class="container mt-3">
+  {% for message in messages %}
+  <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+    {{ message }}
+    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+  </div>
+  {% endfor %}
+</div>
+{% endif %}
+                <!-- Основной контент -->
+                {% block content %}{% endblock %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Модальное окно корзины -->
+    <div class="modal fade" id="cartModal" tabindex="-1" aria-labelledby="cartModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-scrollable modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="cartModalLabel">Корзина</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body" id="cartContent">
+            <div class="text-center text-muted py-3">
+                <div class="spinner-border spinner-border-sm" role="status">
+                    <span class="visually-hidden">Загрузка...</span>
+                </div>
+                Загрузка содержимого корзины...
+            </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Футер -->
+    <footer class="bg-dark text-white text-center py-3 mt-5">
+        <p>&copy; {% now "Y" %} TechStore. Все права защищены.</p>
+    </footer>
+
+    <!-- Подключаем JS в конце body -->
+
+<script src="{% static 'deps/js/jquery/jquery-3.7.0.min.js' %}"></script>
+<script src="{% static 'deps/js/jquery-ajax.js' %}"></script>
+<script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.6/dist/umd/popper.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.min.js"></script>
+<script src="{% static 'js/dropdowns.js' %}"></script>
+
+    {% block extra_js %}{% endblock %}
+
+    <script>
+document.addEventListener('DOMContentLoaded', function() {
+  const hamburger = document.getElementById('hamburger');
+  const navbarNav = document.getElementById('navbarNav');}
+)
+       

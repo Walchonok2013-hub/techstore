@@ -1,0 +1,90 @@
+
+from django.shortcuts import render, redirect, get_object_or_404
+from django.contrib.auth.decorators import login_required
+from .forms import OrderCreateForm
+from cart.cart import Cart
+from .models import Order, OrderItem, Product
+
+from django.db import transaction
+from django.contrib import messages
+from django.shortcuts import render, redirect
+import logging
+from shop.models import Product  # укажите корректный путь к модели Product
+logger = logging.getLogger(__name__)
+
+@login_required
+def order_create(request):
+    cart = Cart(request)
+    
+    if len(cart) == 0:  # проверяем количество товаров в корзине
+        messages.error(request, "Ваша корзина пуста.")
+        return redirect('cart:detail')
+
+    if request.method == 'POST':
+        form = OrderCreateForm(request.POST)
+        if form.is_valid():
+            try:
+                with transaction.atomic():
+                    # Создаём заказ
+                    order = form.save(commit=False)
+                    order.user = request.user
+                    order.status = 'NEW'
+                    order.save()
+
+                    # Добавляем товары из корзины в заказ
+                    items_created = 0
+                    for item in cart:
+                        OrderItem.objects.create(
+                            order=order,
+                            product=item['product'],
+                            price=item['price'],
+                            quantity=item['quantity']
+                        )
+                        items_created += 1
+
+                    # Очищаем корзину
+                    cart.clear()
+
+                    logger.info(f"Заказ #{order.id} успешно создан пользователем {request.user.username}. Добавлено товаров: {items_created}")
+                    messages.success(request, f"Заказ #{order.id} успешно оформлен!")
+
+                    return redirect('orders:order_created', order.id)
+
+            except Exception as e:
+                logger.error(f"Ошибка при создании заказа для пользователя {request.user.username}: {str(e)}")
+                messages.error(request, "Произошла ошибка при оформлении заказа. Пожалуйста, попробуйте ещё раз.")
+                # Если произошла ошибка, транзакция откатится автоматически благодаря transaction.atomic()
+                return render(request, 'orders/create.html', {'form': form})
+        else:
+            messages.error(request, "Пожалуйста, исправьте ошибки в форме.")
+            logger.warning(f"Ошибки валидации формы заказа для пользователя {request.user.username}: {form.errors}")
+    else:
+        form = OrderCreateForm()
+
+    return render(request, 'orders/create.html', {
+        'form': form,
+        'cart': cart
+    })
+    
+def admin_order_detail(request, order_id):
+    order = get_object_or_404(Order, id=order_id)
+    return render(request, 'admin/orders/order/detail.html', {'order': order})
+
+
+
+def order_created(request, order_id):
+    return render(request, 'orders/created.html', {'order_id': order_id})
+
+
+def order_confirmation(request, order_id):
+    # Здесь можно добавить логику получения заказа и передачи его в шаблон
+    return render(request, 'orders/confirmation.html', {'order_id': order_id})
+
+
+
+
+def product_list(request):
+    from shop.models import Product
+    products = Product.objects.all()
+    return render(request, 'orders/product_list.html', {'products': products})
+  

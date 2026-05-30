@@ -1,0 +1,15 @@
+{% extends 'base.html' %}
+
+{% block title %}Информация — TechStore{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <h1>Информация о компании</h1>
+    <p>Здесь будет общая информация о нашем магазине...</p>
+    <ul>
+        <li><a href="{% url 'myapp:delivery' %}">Доставка и оплата</a></li>
+        <li><a href="{% url 'myapp:contacts' %}">Контактная информация</a></li>
+        <li><a href="{% url 'myapp:about' %}">Про нас</a></li>
+    </ul>
+</div>
+{% endblock %}

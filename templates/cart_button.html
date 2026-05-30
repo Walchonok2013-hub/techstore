@@ -1,0 +1,33 @@
+{% load static %}
+{% load user_carts %}
+
+<!-- Кнопка вызова корзины -->
+<div class="cart-trigger">
+    <button type="button" class="btn btn-dark d-flex align-items-center" id="cartModalButton"
+            data-bs-toggle="modal" data-bs-target="#cartModal"
+            aria-expanded="false" aria-controls="cartModal">
+        <img class="mx-1" src="{% static 'deps/icons/basket2-fill.svg' %}" alt="Корзина" width="24" height="24">
+        <span id="goodsInCartCount">
+            {% user_cart_count as cart_count %}
+            {{ cart_count }}
+        </span>
+    </button>
+</div>
+
+<!-- Разметка модального окна корзины -->
+<div class="modal fade" id="cartModal" tabindex="-1" aria-labelledby="cartModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-scrollable modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="cartModalLabel">Корзина</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div id="cartContent">
+                    <!-- Содержимое корзины будет загружено через AJAX -->
+                    <div class="text-center text-muted">
+                Загрузка содержимого корзины...
+            </div>
+        </div>
+    </div>
+</div>

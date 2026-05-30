@@ -1,0 +1,101 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Корзина{% endblock %}
+
+
+{% block content %}
+<div class="container my-4">
+    <h1>Корзина</h1>
+
+
+    {% if cart_items %}
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Товар</th>
+            <th>Количество</th>
+            <th>Цена за шт.</th>
+            <th>Общая цена</th>
+            <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in cart_items %}
+                <tr>
+                    <td>
+                <div class="d-flex align-items-center">
+                    {% if item.product.image %}
+                        <img src="{{ item.product.image.url }}" alt="{{ item.product.name }}"
+                             class="img-thumbnail me-3" style="width: 80px;">
+            {% else %}
+                        <div class="img-thumbnail me-3" style="width: 80px; height: 80px; background: #f8f9fa; display: flex; align-items: center; justify-content: center;">
+                            <span class="text-muted">Нет фото</span>
+                </div>
+            {% endif %}
+            <div>
+                <strong>{{ item.product.name }}</strong><br>
+                <small class="text-muted">{{ item.product.category.name }}</small>
+            </div>
+        </div>
+    </td>
+    <td>
+        <div class="d-flex align-items-center">
+            <!-- Кнопка уменьшения количества -->
+            <form action="{% url 'cart:cart_remove_item' item.product.id %}" method="post" class="d-inline">
+                {% csrf_token %}
+                <input type="hidden" name="quantity" value="1">
+                <button type="submit" class="btn btn-sm btn-outline-secondary me-2"
+                        {% if item.quantity <= 1 %}disabled{% endif %}>
+                    −
+                </button>
+            </form>
+
+            <!-- Отображаемое количество -->
+            <span class="me-2">{{ item.quantity }}</span>
+
+            <!-- Кнопка увеличения количества -->
+            <form action="{% url 'cart:cart_add' item.product.id %}" method="post" class="d-inline">
+                {% csrf_token %}
+                <input type="hidden" name="quantity" value="1">
+                <button type="submit" class="btn btn-sm btn-outline-primary">
+                    +
+                </button>
+            </form>
+        </div>
+    </td>
+    <td>{{ item.price }} руб.</td>
+    <td>{{ item.total_price }} руб.</td>
+    <td>
+        <a href="{% url 'cart:cart_remove' item.product.id %}"
+           class="btn btn-sm btn-outline-danger"
+           onclick="return confirm('Удалить товар из корзины?')">
+            Удалить
+        </a>
+    </td>
+</tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <div class="row mt-4">
+            <div class="col-md-6">
+                <a href="{% url 'products:catalog' %}" class="btn btn-secondary">Продолжить покупки</a>
+            </div>
+            <div class="col-md-6 text-end">
+                <h4>Итого: <strong>{{ total_price }} руб.</strong></h4>
+                <a href="{% url 'orders:order_create' %}" class="btn btn-success btn-lg">Оформить заказ</a>
+            </div>
+        </div>
+
+    {% else %}
+        <div class="text-center my-5">
+            <i class="fas fa-shopping-cart fa-5x text-muted mb-3"></i>
+            <h3>Ваша корзина пуста</h3>
+            <p>Добавьте товары в корзину, чтобы увидеть их здесь.</p>
+            <a href="{% url 'products:catalog' %}" class="btn btn-primary btn-lg">Перейти в каталог</a> 
+
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

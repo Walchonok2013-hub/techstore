@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% block title %}Вход в систему{% endblock %}
+
+{% block page_title %}Авторизация{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="login-container">
+        <div class="login-card card">
+            <div class="card-header">
+                <h2 class="card-title">Вход в систему</h2>
+            </div>
+
+            <div class="card-body">
+                {% if form.errors %}
+                    <div class="alert alert-danger">
+                <p>Пожалуйста, исправьте ошибки ниже:</p>
+                {% for field in form %}
+                    {% if field.errors %}
+                <p><strong>{{ field.label }}:</strong> {{ field.errors }}</p>
+            {% endif %}
+                {% endfor %}
+                <!-- Ошибки, не привязанные к полям -->
+                {% if form.non_field_errors %}
+                    <p>{{ form.non_field_errors }}</p>
+                {% endif %}
+            </div>
+        {% endif %}
+
+        <form method="post" class="login-form">
+            {% csrf_token %}
+                {% if next %}
+        <input type="hidden" name="next" value="{{ next }}">
+    {% endif %}
+            <!-- Поле имени пользователя -->
+            <div class="form-group mb-3">
+                <label for="{{ form.username.id_for_label }}" class="form-label">Имя пользователя:</label>
+                {{ form.username }}
+                {% if form.username.errors %}
+            <div class="error-message text-danger">{{ form.username.errors }}</div>
+                {% endif %}
+            </div>
+
+            <!-- Поле пароля -->
+            <div class="form-group mb-3">
+                <label for="{{ form.password.id_for_label }}" class="form-label">Пароль:</label>
+                {{ form.password }}
+                {% if form.password.errors %}
+            <div class="error-message text-danger">{{ form.password.errors }}</div>
+                {% endif %}
+            </div>
+
+            <!-- Скрытое поле для перенаправления -->
+            {% if next %}
+                <input type="hidden" name="next" value="{{ next }}">
+            {% endif %}
+
+            <button type="submit" class="btn btn-primary w-100" id="login-btn">
+                Войти
+            </button>
+        </form>
+
+        <div class="login-links mt-3">
+            <a href="{% url 'user:password_reset' %}" class="password-reset-link">Забыли пароль?</a>
+            <p class="mt-2">Нет аккаунта? <a href="{% url 'user:register' %}" class="text-primary">Зарегистрируйтесь</a></p>
+            <p class="mt-2"><a href="{% url 'home' %}" class="text-secondary">Вернуться на главную</a></p>
+        </div>
+    </div>
+</div>
+{% endblock %}
+    

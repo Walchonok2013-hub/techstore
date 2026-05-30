@@ -1,0 +1,19 @@
+
+<h1>Поиск товаров</h1>
+<form method="get">
+    <input type="text" name="q" value="{{ query }}" placeholder="Введите запрос...">
+    <button type="submit">Найти</button>
+</form>
+
+{% if products %}
+    <div class="products">
+        {% for product in products %}
+            <div class="product">
+                <h3>{{ product.name }}</h3>
+                <p>{{ product.price }} руб.</p>
+            </div>
+        {% endfor %}
+    </div>
+{% elif query %}
+    <p>По запросу «{{ query }}» ничего не найдено.</p>
+{% endif %}
