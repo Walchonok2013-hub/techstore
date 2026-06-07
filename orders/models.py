@@ -54,6 +54,7 @@ class Order(models.Model):
     created = models.DateTimeField(auto_now_add=True, verbose_name="Создан")
     updated = models.DateTimeField(auto_now=True, verbose_name="Обновлён")
     paid = models.BooleanField(default=False, verbose_name="Оплачен")
+   
     total_amount = models.DecimalField(
         max_digits=10,
         decimal_places=2,

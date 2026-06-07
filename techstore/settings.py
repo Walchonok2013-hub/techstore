@@ -43,6 +43,7 @@ INSTALLED_APPS = [
     'main',
     'user',
     'accounts',
+    'home',
     'myapp',
     # 'modeltranslation',
 ]
@@ -148,6 +149,7 @@ CACHES = {
 # Дополнительные настройки
 CART_SESSION_ID = 'cart'
 MESSAGE_STORAGE = 'django.contrib.messages.storage.session.SessionStorage'  # Исправлено
+
 
 LOGGING = {
     'version': 1,

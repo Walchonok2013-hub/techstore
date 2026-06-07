@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Оплата заказа{% endblock %}
+
+{% block content %}
+<div class="container my-4">
+  <h1 class="mb-4">Оплата заказа</h1>
+
+  <div class="card">
+    <div class="card-body">
+      <h5>Способ оплаты: Банковской картой</h5>
+
+      <form action="https://secure.payment-gateway.com/pay" method="POST">
+        <div class="mb-3">
+          <label class="form-label">Номер карты</label>
+          <input type="text" class="form-control" name="card_number" required>
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Срок действия (ММ/ГГ)</label>
+          <input type="text" class="form-control" name="expiry" required>
+        </div>
+        <div class="mb-3">
+          <label class="form-label">CVV</label>
+          <input type="text" class="form-control" name="cvv" required>
+        </div>
+
+        <button type="submit" class="btn btn-success">Оплатить</button>
+      </form>
+
+      <a href="{% url 'orders:create' %}" class="btn btn-secondary mt-3">Вернуться к оформлению</a>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -7,6 +7,7 @@
 <body>
     <h1>Заказ №{{ order_id }} подтверждён!</h1>
     <p>Спасибо за покупку.</p>
-    <a href="{% url 'shop:product_list' %}">Вернуться в магазин</a>
+    
+<a href="{% url 'products:catalog' %}" class="btn btn-primary btn-lg">Перейти в каталог</a>
 </body>
 </html>
