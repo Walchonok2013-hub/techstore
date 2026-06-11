@@ -37,14 +37,22 @@ class Order(models.Model):
         null=False,
         blank=False
     )
+
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
         related_name='orders',
-        verbose_name="Пользователь",
-        null=True,  # Временное разрешение NULL для отладки
-        blank=True   # Временное разрешение blank для отладки
-    )
+        verbose_name="Пользователь"
+        
+    )    
+    # user = models.ForeignKey(
+    #     settings.AUTH_USER_MODEL,
+    #     on_delete=models.CASCADE,
+    #     related_name='orders',
+    #     verbose_name="Пользователь",
+    #     null=True,  # Временное разрешение NULL для отладки
+    #     blank=True   # Временное разрешение blank для отладки
+    # )
     first_name = models.CharField(max_length=50, verbose_name="Имя")
     last_name = models.CharField(max_length=50, verbose_name="Фамилия")
     email = models.EmailField(verbose_name="Email")

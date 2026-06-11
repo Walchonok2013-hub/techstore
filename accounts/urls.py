@@ -17,6 +17,9 @@ urlpatterns = [
     path('addresses/', views.addresses_view, name='addresses'),
     path('payment-methods/', views.payment_methods_view, name='payment_methods'),
     path('change-password/', views.change_password_view, name='change_password'),
+    path('payment-methods/<int:card_id>/delete/', views.delete_card, name='delete_card'),
+    
+    
 
     # Маршруты для сброса пароля
     path('password-reset/',

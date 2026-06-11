@@ -55,7 +55,7 @@
             <span class="me-2">{{ item.quantity }}</span>
 
             <!-- Кнопка увеличения количества -->
-            <form action="{% url 'cart:cart_add' item.product.id %}" method="post" class="d-inline">
+            <form action="{% url 'cart:add' item.product.id %}" method="post" class="d-inline">
                 {% csrf_token %}
                 <input type="hidden" name="quantity" value="1">
                 <button type="submit" class="btn btn-sm btn-outline-primary">

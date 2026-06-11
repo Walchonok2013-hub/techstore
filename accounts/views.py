@@ -7,7 +7,29 @@ from django.contrib.auth.forms import AuthenticationForm, UserCreationForm, Pass
 from django.contrib.auth import update_session_auth_hash
 from .forms import UserEditForm
 from .models import Order, WishlistItem, Address
+from django.contrib.auth import views as auth_views
+from techstore import settings
+from .forms import CustomUserCreationForm, CustomAuthenticationForm
+from django.contrib.auth.decorators import login_required
+from django.views.decorators.http import require_POST
+from django.http import JsonResponse
+from .models import PaymentMethod
 
+
+
+@login_required
+def change_password_view(request):
+    if request.method == 'POST':
+        form = PasswordChangeForm(request.user, request.POST)
+        if form.is_valid():
+            user = form.save()
+            update_session_auth_hash(request, user)  # Сохраняем сессию, чтобы пользователь не вышел
+            messages.success(request, 'Пароль успешно изменён!')
+            return redirect('accounts:profile')  # Перенаправляем на профиль
+    else:
+        form = PasswordChangeForm(request.user)
+
+    return render(request, 'accounts/change_password.html', {'form': form})
 def login_view(request):
     if request.method == 'POST':
         form = AuthenticationForm(request, data=request.POST)
@@ -27,8 +49,9 @@ def logout_view(request):
     logout(request)
     messages.info(request, f'{username}, вы успешно вышли из системы')
     return redirect('main:index')
-
+@login_required
 def payment_methods_view(request):
+    payment_methods = PaymentMethod.objects.filter(user=request.user)
     payment_methods = [
         {'name': 'Банковская карта', 'icon': 'credit-card'},
         {'name': 'Электронный кошелёк', 'icon': 'wallet'},
@@ -39,7 +62,17 @@ def payment_methods_view(request):
         'title': 'Способы оплаты'
     }
     return render(request, 'accounts/payment_methods.html', context)
-
+# @login_required
+# def payment_methods_view(request):
+#     # ВАЖНО: .filter(user=request.user)
+#     payment_methods = PaymentMethod.objects.filter(user=request.user)
+    
+#     context = {
+#         'payment_methods': payment_methods,
+        
+        
+#     }
+#     return render(request, 'accounts/payment_methods.html', context)
 @login_required
 def profile_view(request):
     context = {'user': request.user}
@@ -47,14 +80,25 @@ def profile_view(request):
 
 def register_view(request):
     if request.method == 'POST':
-        form = UserCreationForm(request.POST)
+        form = CustomUserCreationForm(request.POST)
         if form.is_valid():
             user = form.save()
             login(request, user)
             return redirect('main:index')
     else:
-        form = UserCreationForm()
+        # Исправляем здесь: создаем CustomUserCreationForm, а не UserCreationForm
+        form = CustomUserCreationForm()
     return render(request, 'accounts/register.html', {'form': form})
+# def register_view(request):
+#     if request.method == 'POST':
+#         form = CustomUserCreationForm(request.POST)
+#         if form.is_valid():
+#             user = form.save()
+#             login(request, user)
+#             return redirect('main:index')
+#     else:
+#         form = UserCreationForm()
+#     return render(request, 'accounts/register.html', {'form': form})
 
 @login_required
 def edit_profile(request):
@@ -71,18 +115,8 @@ def edit_profile(request):
     context = {'form': form}
     return render(request, 'accounts/edit_profile.html', context)
 
-@login_required
-def change_password_view(request):
-    if request.method == 'POST':
-        form = PasswordChangeForm(request.user, request.POST)
-        if form.is_valid():
-            user = form.save()
-            update_session_auth_hash(request, user)  # Сохраняем сессию
-            messages.success(request, 'Пароль успешно изменён!')
-            return redirect('accounts:profile')
-    else:
-        form = PasswordChangeForm(request.user)
-    return render(request, 'accounts/change_password.html', {'form': form})
+
+
 
 @login_required
 def settings_view(request):
@@ -103,3 +137,27 @@ def addresses_view(request):
     addresses = Address.objects.filter(user=request.user)
     return render(request, 'accounts/addresses.html', {'addresses': addresses})
 
+@login_required
+@require_POST
+def delete_card(request, card_id):
+    try:
+        # Удаляем только карту текущего пользователя
+        card = PaymentMethod.objects.get(id=card_id, user=request.user)
+        card.delete()
+        return JsonResponse({'status': 'ok'})
+    except PaymentMethod.DoesNotExist:
+        return JsonResponse({'status': 'error', 'message': 'Карта не найдена или не принадлежит вам'}, status=404)
+    
+def get_default_user_id(apps, schema_editor):
+    User = apps.get_model(settings.AUTH_USER_MODEL.split('.')[0], 'User')
+    try:
+        user = User.objects.get(username='default_user')
+        return user.id
+    except User.DoesNotExist:
+        # Создаём пользователя с хешированным паролем
+        user = User.objects.create_user(
+            username='default_user',
+            email='default@example.com',
+            password=None  # или используйте надёжный пароль
+        )
+        return user.id    

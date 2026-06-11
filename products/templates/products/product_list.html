@@ -63,6 +63,14 @@
             >
                 В корзину
             </button>
+
+
+            
+<button class="btn favorite-btn position-absolute top-0 end-0 m-2 {% if product.is_favorite %}active{% endif %}"
+    data-product-id="{{ product.id }}"
+    title="Добавить в избранное">
+    <i class="bi {% if product.is_favorite %}bi-heart-fill{% else %}bi-heart{% endif %}"></i>
+</button>
         </form>
     </div>
 </div>

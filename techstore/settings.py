@@ -47,6 +47,7 @@ INSTALLED_APPS = [
     'myapp',
     # 'modeltranslation',
 ]
+
 AUTH_USER_MODEL = 'accounts.User'
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -60,14 +61,31 @@ MIDDLEWARE = [
 
 ROOT_URLCONF = 'techstore.urls'
 
+# TEMPLATES = [
+#     {
+#         'BACKEND': 'django.template.backends.django.DjangoTemplates',
+#         'DIRS': [
+#             BASE_DIR / 'templates',  # Папка с общими шаблонами
+#             BASE_DIR / 'orders' / 'templates',  # шаблоны приложения orders
+#             BASE_DIR / 'user' / 'templates',  # папка шаблонов приложения user
+#         ],
+#         'APP_DIRS': True,
+#         'OPTIONS': {
+#             'context_processors': [
+#                 'django.template.context_processors.debug',
+#                 'django.template.context_processors.request',
+#                 'django.contrib.auth.context_processors.auth',
+#                 'django.contrib.messages.context_processors.messages',
+#                 # 'cart.context_processors.cart',  # Закомментируйте строку
+#             ],
+#         },
+#     },
+# ]
+
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [
-            BASE_DIR / 'templates',  # Папка с общими шаблонами
-            BASE_DIR / 'orders' / 'templates',  # шаблоны приложения orders
-            BASE_DIR / 'user' / 'templates',  # папка шаблонов приложения user
-        ],
+        'DIRS': [BASE_DIR / 'templates'],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -75,12 +93,12 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
-                # 'cart.context_processors.cart',  # Закомментируйте строку
+                # Ваша строка:
+                'products.context_processors.categories_processor',  # Замените 'products' на имя вашего приложения
             ],
         },
     },
 ]
-
 WSGI_APPLICATION = 'techstore.wsgi.application'
 
 # Database

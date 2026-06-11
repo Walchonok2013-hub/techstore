@@ -46,7 +46,7 @@
             <h5 class="card-title mb-3 text-dark font-weight-bold">{{ product.name }}</h5>
             <p class="card-text text-success h5 mb-4">{{ product.price }} руб.</p>
             {% comment %} <a href="{% url 'product_detail' product.id %}" {% endcomment %}
-              <a href="{% url 'products:product_detail' product.id product.slug %}"
+              <a href="{% url 'products:product_detail' product.slug %}"
                  class="btn btn-outline-primary">
                 Подробнее
               </a> 

@@ -78,7 +78,7 @@
                 Мой профиль ({{ user.username }})
             </a>
             <ul class="dropdown-menu">
-                <li><a class="dropdown-item" href="{% url 'cart:cart_detail' %}">Корзина</a></li>
+                <li><a class="dropdown-item" href="{% url 'cart:detail' %}">Корзина</a></li>
                 <li><a class="dropdown-item" href="{% url 'accounts:profile' %}">Личный кабинет</a></li>
                 {% if user.is_staff %}
                 <li><a class="dropdown-item" href="{% url 'admin:index' %}">Админ панель</a></li>

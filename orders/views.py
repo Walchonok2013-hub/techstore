@@ -4,7 +4,7 @@ from django.contrib.auth.decorators import login_required
 from .forms import OrderCreateForm
 from cart.cart import Cart
 from .models import Order, OrderItem, Product
-
+from .models import Order
 from django.db import transaction
 from django.contrib import messages
 from django.shortcuts import render, redirect
@@ -85,7 +85,10 @@ def order_confirmation(request, order_id):
 #     # Здесь можно добавить логику получения заказа и передачи его в шаблон
 #     return render(request, 'orders/confirmation.html', {'order_id': order_id})
 
-
+@login_required
+def my_orders(request):
+    orders = Order.objects.filter(user=request.user).order_by('-created')
+    return render(request, 'orders/my_orders.html', {'orders': orders})
 
 
 def product_list(request):
@@ -116,3 +119,4 @@ def payment_view(request):
 def payment_form_view(request):
     # отображаем страницу с формой оплаты
     return render(request, 'orders/payment_form.html')  # не redirect, а render!
+

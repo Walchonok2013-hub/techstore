@@ -90,6 +90,17 @@
             <p class="text-muted small">
                 Все товары в этой категории
             </p>
+                <ul>
+        {% for product in products %}
+            <li>
+                <a href="{% url 'products:product_detail' product.slug %}">
+                    {{ product.name }} — {{ product.price }} руб.
+                </a>
+            </li>
+        {% empty %}
+            <li>Товаров в этой категории нет.</li>
+        {% endfor %}
+    </ul>
         </div>
         <div class="d-flex align-items-center gap-2">
             <span class="text-muted small">Всего:</span>
@@ -139,7 +150,7 @@
                 </p>
                 <div class="mt-auto pt-3">
                     <p class="price fs-5 mb-2">{{ product.price }} руб.</p>
-                    <a href="{% url 'products:product_detail' product.id product.slug %}"
+                    <a href="{% url 'products:product_detail' product.slug %}"
                class="btn btn-primary w-100">Подробнее</a>
                 </div>
             </div>

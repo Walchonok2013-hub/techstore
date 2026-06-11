@@ -16,13 +16,18 @@ class Cart:
             self.session[settings.CART_SESSION_ID] = cart
             self.session.save()
         self.cart = cart  # единое хранилище корзины
-
-    def add(self, product, quantity=1, update_quantity=False):
-        """Добавление товара в корзину или обновление количества"""
+    def add(self, product, quantity, update_quantity=False):
         product_id = str(product.id)
 
+    # Валидация quantity
+        try:
+            quantity = int(quantity)
+            if quantity < 0:
+                raise ValueError("Количество не может быть отрицательным")
+        except (ValueError, TypeError):
+            raise ValueError(f"Некорректное значение количества: {quantity}")
+
         if product_id not in self.cart:
-            # Добавляем новый товар с переданным количеством
             self.cart[product_id] = {
                 'quantity': quantity,
                 'price': str(product.price)
@@ -34,6 +39,51 @@ class Cart:
                 self.cart[product_id]['quantity'] += quantity
 
         self.save()
+
+    # def add(self, product, quantity=1, update_quantity=False):
+    #     """Добавление товара в корзину или обновление количества"""
+    # # Валидация входных данных
+    #     if not product or not hasattr(product, 'id') or not hasattr(product, 'price'):
+    #         raise ValueError("Некорректный объект товара: отсутствует id или price")
+
+
+    #     if product.price is None:
+    #         raise ValueError(f"Товар {product.id} не имеет установленной цены")
+
+
+    #     try:
+    #         quantity = int(quantity)
+    #     except (ValueError, TypeError):
+    #         raise ValueError("Количество должно быть целым числом")
+
+
+    #     if quantity < 0:
+    #         raise ValueError("Количество не может быть отрицательным")
+
+    #     product_id = str(product.id)
+
+
+    # Инициализация корзины, если ещё не создана
+    #     if not self.cart:
+    #         self.cart = {}
+
+    #     if product_id not in self.cart:
+    #     # Добавляем новый товар с переданным количеством
+    #         self.cart[product_id] = {
+    #             'quantity': quantity,
+    #             'price': str(product.price)
+    #         }
+    #     else:
+    #         if update_quantity:
+    #             self.cart[product_id]['quantity'] = quantity
+    #         else:
+    #             self.cart[product_id]['quantity'] += quantity
+
+    # # Дополнительная проверка: не допускаем отрицательных количеств
+    #     if self.cart[product_id]['quantity'] < 0:
+    #         self.cart[product_id]['quantity'] = 0
+
+    #     self.save()
 
     def save(self):
         """Сохраняет корзину в сессию"""
