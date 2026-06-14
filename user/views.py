@@ -5,9 +5,6 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
 
 
-def home(request):
-    context = {}
-    return render(request, 'user/home.html', context)
 
 
 def register(request):
@@ -35,8 +32,8 @@ def login_view(request):
                 return redirect('main:index')  # перенаправление на главную
             else:
                 messages.error(request, 'Неверные учётные данные')
-        else:
-            messages.error(request, 'Ошибка в форме входа')
+        # else:
+        #     messages.error(request, 'Ошибка в форме входа')
     else:
         form = AuthenticationForm()
     return render(request, 'user/login.html', {'form': form})
@@ -52,4 +49,4 @@ def logout_view(request):
     username = request.user.username
     logout(request)
     messages.info(request, f'{username}, вы успешно вышли из системы')
-    return redirect('main:index')
+    return redirect('products:home')

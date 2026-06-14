@@ -1,0 +1,28 @@
+{% extends 'base.html' %}
+
+{% block title %}Добавить карту — Личный кабинет{% endblock %}
+
+{% block content %}
+<div class="container my-5">
+  <h1>Добавить способ оплаты</h1>
+  <div class="row">
+    <div class="col-md-6">
+      <form method="post">
+        {% csrf_token %}
+        {{ form.non_field_errors }}
+        {% for field in form %}
+          <div class="mb-3">
+            <label for="{{ field.id_for_label }}" class="form-label">{{ field.label }}</label>
+            {{ field }}
+            {% if field.errors %}
+              <div class="text-danger">{{ field.errors }}</div>
+            {% endif %}
+          </div>
+        {% endfor %}
+        <button type="submit" class="btn btn-success">Сохранить карту</button>
+        <a href="{% url 'cards_list' %}" class="btn btn-secondary">Отмена</a>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

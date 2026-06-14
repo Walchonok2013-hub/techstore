@@ -18,7 +18,10 @@ urlpatterns = [
     path('payment-methods/', views.payment_methods_view, name='payment_methods'),
     path('change-password/', views.change_password_view, name='change_password'),
     path('payment-methods/<int:card_id>/delete/', views.delete_card, name='delete_card'),
-    
+    path('payment-methods/add/', views.payment_methods_add, name='payment-methods-add'),
+    path('cards/', views.cards_list, name='cards_list'),
+    path('cards/add/', views.add_card, name='add_card'),
+    path('cards/<int:pk>/delete/', views.delete_card, name='delete_card'),
     
 
     # Маршруты для сброса пароля

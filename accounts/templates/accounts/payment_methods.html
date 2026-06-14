@@ -1,307 +1,341 @@
+
 {% extends 'base.html' %}
+
 {% block title %}Способы оплаты — Techstore{% endblock %}
 
 {% block content %}
-<div class="container my-5">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h1>Способы оплаты</h1>
-        <a href="#" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addCardModal">
-            <i class="bi bi-plus"></i> Добавить карту
-        </a>
-    </div>
+     <div class="container my-5">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1>Способы оплаты</h1>
 
-    {% if payment_methods %}
-        <div class="row g-4">
-            {% for method in payment_methods %}
-            <div class="col-12 col-md-6">
-                <div class="card border-0 shadow-sm h-100">
-                    <div class="card-body">
-                        <div class="d-flex justify-content-between align-items-start mb-3">
-                            <div>
-                                <h5 class="card-title mb-0">
-                                    {% if method.card_type == 'visa' %}
-                                        <i class="bi bi-credit-card text-primary"></i> Visa
-                                    {% elif method.card_type == 'mastercard' %}
-                                        <i class="bi bi-credit-card text-orange"></i> MasterCard
-                                    {% else %}
-                                        <i class="bi bi-credit-card text-muted"></i> Карта
+        </div>
+
+        {% if payment_methods %}
+            <div class="row g-4">
+                {% for method in payment_methods %}
+                    <div class="col-12 col-md-6">
+                        <div class="card border-0 shadow-sm h-100 payment-method-card">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between align-items-start mb-3">
+                                    <div>
+                                        <h5 class="card-title mb-1">
+                                            {% if method.card_type == 'visa' %}
+                                                <i class="bi bi-credit-card text-primary"></i> Visa
+                                            {% elif method.card_type == 'mastercard' %}
+                                                <i class="bi bi-credit-card text-warning"></i> MasterCard
+                                            {% else %}
+                                                <i class="bi bi-credit-card text-muted"></i> Карта
+                                            {% endif %}
+                                        </h5>
+                                        <small class="text-muted fw-bold" aria-label="Последние 4 цифры карты">
+                                            **** **** **** {{ method.last_digits }}
+                                        </small>
+                                    </div>
+                                    {% if method.is_default %}
+                                        <span class="badge bg-primary rounded-pill" aria-label="Карта по умолчанию">По умолчанию</span>
                                     {% endif %}
-                                </h5>
-                                <small class="text-muted">**** **** **** {{ method.last_digits }}</small>
+                                </div>
+
+                                <div class="d-flex flex-wrap gap-2">
+                                    {% if not method.is_default %}
+                                        <button type="button"
+                                                class="btn btn-sm btn-outline-primary set-default-btn"
+                                                data-card-id="{{ method.id }}"
+                                                aria-label="Сделать основной">
+                                            Сделать основной
+                                        </button>
+                                    {% else %}
+                                        <span class="btn btn-sm btn-light text-muted" tabindex="-1" aria-disabled="true">Основная</span>
+                                    {% endif %}
+
+                                    <button type="button"
+                                            class="btn btn-sm btn-outline-danger delete-card-btn"
+                                            data-card-id="{{ method.id }}"
+                                            aria-label="Удалить карту">
+                                        Удалить
+                                    </button>
+                                </div>
                             </div>
-                            {% if method.is_default %}
-                                <span class="badge bg-primary">По умолчанию</span>
-                            {% endif %}
-                        </div>
-
-                        <div class="d-flex gap-2">
-                            {% if not method.is_default %}
-                                <button class="btn btn-sm btn-outline-primary">Сделать основной</button>
-                            {% endif %}
-                            <button class="btn btn-sm btn-outline-danger delete-card-btn" data-card-id="{{ method.id }}">Удалить</button>
-
-                            
                         </div>
                     </div>
-                </div>
+                {% endfor %}
             </div>
-            {% endfor %}
-        </div>
-    {% else %}
-        <div class="text-center py-5">
-            <i class="bi bi-credit-card fs-1 text-muted"></i>
-            <h4 class="mt-3 text-muted">Способы оплаты не добавлены</h4>
-            <p class="text-muted">Добавьте банковскую карту для быстрой оплаты заказов.</p>
-        </div>
-    {% endif %}
+        {% else %}
+            <div class="text-center py-5 bg-light rounded">
+                <i class="bi bi-credit-card fs-1 text-muted opacity-50"></i>
+                <h4 class="mt-3 text-muted">Способы оплаты не добавлены</h4>
 
-    <!-- Модальное окно добавления карты -->
-    <div class="modal fade" id="addCardModal" tabindex="-1">
+                {% if payment_methods %}
+                    {% for method in payment_methods %}
+                        <!-- кнопки с data-card-id="{{ method.id }}" -->
+                    {% endfor %}
+                {% else %}
+                    <p>Способы оплаты не добавлены</p>
+                {% endif %}
+
+                <p class="text-muted">Добавьте банковскую карту для быстрой оплаты заказов.</p>
+                <button type="button" class="btn btn-primary mt-3" data-bs-toggle="modal" data-bs-target="#addCardModal">
+                    Добавить карту
+                </button>
+            </div> 
+         {% endif %}
+    </div> 
+
+ <!-- Модальное окно добавления карты -->
+    <div class="modal fade" id="addCardModal" tabindex="-1" aria-labelledby="addCardModalLabel" aria-hidden="true">
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title">Добавить банковскую карту</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    <h5 class="modal-title" id="addCardModalLabel">Добавить банковскую карту</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
                 </div>
-                <div class="modal-body">
-                    <form>
+                <form id="addCardForm" action="{% url 'accounts:payment-methods-add' %}" method="POST">
+                    {% csrf_token %}
+                    <div class="modal-body">
                         <div class="mb-3">
-                            <label class="form-label">Номер карты</label>
-                            <input type="text" class="form-control" placeholder="1234 5678 9012 3456" required>
+                            <label for="cardNumber" class="form-label">Номер карты</label>
+                            <input type="tel"
+                                   id="cardNumber"
+                                   name="card_number"
+                                   class="form-control"
+                                   inputmode="numeric"
+                                   pattern="[0-9\s]{13,19}"
+                                   maxlength="19"
+                                   placeholder="1234 5678 9012 3456"
+                                   required
+                                   autocomplete="cc-number">
                         </div>
                         <div class="row">
                             <div class="col-md-6 mb-3">
-                                <label class="form-label">Срок действия</label>
-                                <input type="text" class="form-control" placeholder="ММ/ГГ" required>
+                                <label for="expiryDate" class="form-label">Срок действия (ММ/ГГ)</label>
+                                <input type="text"
+                                       id="expiryDate"
+                                       name="expiry_date"
+                                       class="form-control"
+                                       inputmode="numeric"
+                                       pattern="(0[1-9]|1[0-2])\/[0-9]{2}"
+                                       placeholder="ММ/ГГ"
+                                       required
+                                       autocomplete="cc-exp">
                             </div>
                             <div class="col-md-6 mb-3">
-                                <label class="form-label">CVV</label>
-                                <input type="text" class="form-control" placeholder="123" required>
+                                <label for="cvv" class="form-label">CVV</label>
+                                <input type="tel"
+                                       id="cvv"
+                                       name="cvv"
+                                       class="form-control"
+                                       inputmode="numeric"
+                                       pattern="[0-9]{3,4}"
+                                       maxlength="4"
+                                       placeholder="123"
+                                       required
+                                       autocomplete="cc-csc">
                             </div>
                         </div>
                         <div class="mb-3 form-check">
-                            <input class="form-check-input" type="checkbox" id="setAsDefault">
+                            <input class="form-check-input" type="checkbox" id="setAsDefault" name="set_as_default" value="1">
                             <label class="form-check-label" for="setAsDefault">Сделать картой по умолчанию</label>
                         </div>
-                    </form>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
-                    <button type="submit" class="btn btn-primary">Добавить карту</button>
-                </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                        <button type="submit" class="btn btn-primary">Добавить карту</button>
+                    </div>
+                </form>
             </div>
         </div>
     </div>
-</div>
 
-<script>
-document.addEventListener('DOMContentLoaded', () => {
-  document.querySelectorAll('.delete-card-btn').forEach(btn => {
-    btn.addEventListener('click', function (e) {
-      const cardId = this.getAttribute('data-card-id');
-      
-      // Сначала выводим в консоль, чтобы видеть, что реально есть
-      console.log('Кнопка удаления, ID:', cardId); 
-
-      if (!cardId) {
-        console.error('❌ Нет cardId у кнопки. Проверьте HTML-атрибут data-card-id в DOM (F12 → Elements)');
-        alert('Ошибка: не удалось определить ID карты. Откройте консоль (F12) и посмотрите, есть ли у кнопки атрибут data-card-id.');
-        return;
-      }
-
-      if (!confirm('Вы уверены, что хотите удалить эту карту?')) return;
-
-      // ✅ ИСПРАВЛЕНО: убираем обратный слэш перед \$, теперь это шаблонная строка JS
-      fetch(`/accounts/payment-methods/\${cardId}/delete/`, {
-        method: 'POST',
-        headers: {
-          'X-CSRFToken': getCookie('csrftoken'),
-          'Content-Type': 'application/json'
-        }
-      })
-      .then(res => {
-        if (res.ok) {
-          location.reload();
-        } else {
-          console.error('Сервер вернул ошибку:', res.status);
-          alert('Не удалось удалить карту. Проверьте консоль (F12).');
-        }
-      })
-      .catch(err => {
-        console.error('Ошибка сети:', err);
-        alert('Произошла ошибка сети при удалении.');
-      });
-    });
-  });
-});
-
-function getCookie(name) {
-  let cookieValue = null;
-  if (document.cookie && document.cookie !== '') {
-    const cookies = document.cookie.split(';');
-    for (let i = 0; i < cookies.length; i++) {
-      const cookie = cookies[i].trim();
-      if (cookie.substring(0, name.length + 1) === (name + '=')) {
-        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-      }
-    }
-  }
-  return cookieValue;
-}
-</script>
+    
 {% endblock %}
-{% comment %} {% extends 'base.html' %}
-{% block title %}Способы оплаты — Techstore{% endblock %}
-
-{% block content %}
-<div class="container my-5">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h1>Способы оплаты</h1>
-        <a href="#" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addCardModal">
-            <i class="bi bi-plus"></i> Добавить карту
-        </a>
-    </div>
-
-    {% if payment_methods %}
-        <div class="row g-4">
-            {% for method in payment_methods %}
-            <div class="col-12 col-md-6">
-                <div class="card border-0 shadow-sm h-100">
-                    <div class="card-body">
-                        <div class="d-flex justify-content-between align-items-start mb-3">
-                            <div>
-                                <h5 class="card-title mb-0">
-                    {% if method.card_type == 'visa' %}
-                <i class="bi bi-credit-card text-primary"></i> Visa
-            {% elif method.card_type == 'mastercard' %}
-                <i class="bi bi-credit-card text-orange"></i> MasterCard
-            {% else %}
-                <i class="bi bi-credit-card text-muted"></i> Карта
-            {% endif %}
-                </h5>
-                <small class="text-muted">**** **** **** {{ method.last_digits }}</small>
-            </div>
-            {% if method.is_default %}
-                <span class="badge bg-primary">По умолчанию</span>
-            {% endif %}
-        </div>
-
-        <div class="d-flex gap-2">
-            {% if not method.is_default %}
-                <button class="btn btn-sm btn-outline-primary">Сделать основной</button>
-            {% endif %}
-            
-
-          <button class="btn btn-sm btn-outline-danger delete-card-btn" data-card-id="{{ method.id }}">Удалить</button>
-        </div>
-    </div>
-</div>
-            </div>
-            {% endfor %}
-        </div>
-    {% else %}
-        <div class="text-center py-5">
-            <i class="bi bi-credit-card fs-1 text-muted"></i>
-            <h4 class="mt-3 text-muted">Способы оплаты не добавлены</h4>
-            <p class="text-muted">Добавьте банковскую карту для быстрой оплаты заказов.</p>
-        </div>
-    {% endif %}
-
-    <!-- Модальное окно добавления карты -->
-    <div class="modal fade" id="addCardModal" tabindex="-1">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">Добавить банковскую карту</h5>
-            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    <form>
-                <div class="mb-3">
-                    <label class="form-label">Номер карты</label>
-            <input type="text" class="form-control" placeholder="1234 5678 9012 3456" required>
-                </div>
-                <div class="row">
-            <div class="col-md-6 mb-3">
-                <label class="form-label">Срок действия</label>
-                <input type="text" class="form-control" placeholder="ММ/ГГ" required>
-            </div>
-            <div class="col-md-6 mb-3">
-                <label class="form-label">CVV</label>
-                <input type="text" class="form-control" placeholder="123" required>
-            </div>
-        </div>
-        <div class="mb-3 form-check">
-            <input class="form-check-input" type="checkbox" id="setAsDefault">
-            <label class="form-check-label" for="setAsDefault">
-                Сделать картой по умолчанию
-            </label>
-        </div>
-    </form>
-</div>
-<div class="modal-footer">
-    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
-    <button type="submit" class="btn btn-primary">Добавить карту</button>
-</div>
-</div>
-</div>
-</div>
-</div>
-
-
 <script>
-document.addEventListener('DOMContentLoaded', () => {
-  document.querySelectorAll('.delete-card-btn').forEach(btn => {
-    btn.addEventListener('click', function (e) {
-      const cardId = this.getAttribute('data-card-id');
-      
-      // Отладочный вывод: если тут будет "undefined", значит проблема в HTML
-      console.log('Кнопка удаления, ID:', cardId); 
-
-      if (!cardId) {
-        console.error('Нет cardId у кнопки. Проверьте HTML-атрибут data-card-id');
-        alert('Ошибка: не удалось определить ID карты. Проверьте консоль браузера.');
-        return;
-      }
-
-      if (!confirm('Вы уверены, что хотите удалить эту карту?')) return;
-
-      // ИСПРАВЛЕННАЯ СТРОКА НИЖЕ (обратите внимание на отсутствие \ перед \$)
-      fetch(`/accounts/payment-methods\${cardId}/delete/`, {
-        method: 'POST',
-        headers: {
-          'X-CSRFToken': getCookie('csrftoken'),
-          'Content-Type': 'application/json'
+    document.addEventListener('DOMContentLoaded', () => {
+        const modalEl = document.getElementById('addCardModal');
+        if (modalEl) {
+            const modal = new bootstrap.Modal(modalEl);
+            modalEl.addEventListener('shown.bs.modal', () => {
+                const firstInput = modalEl.querySelector('input[type="tel"], input[type="text"]');
+                if (firstInput) {
+                    firstInput.focus();
+                }
+            });
         }
-      })
-      .then(res => {
-        if (res.ok) {
-          location.reload();
-        } else {
-          console.error('Сервер вернул ошибку:', res.status);
-          alert('Не удалось удалить карту. Проверьте консоль браузера (F12).');
-        }
-      })
-      .catch(err => {
-        console.error('Ошибка сети:', err);
-        alert('Произошла ошибка сети при удалении.');
-      });
+
+        // Удаление карты
+        document.querySelectorAll('.delete-card-btn').forEach(btn => {
+            btn.addEventListener('click', handleDeleteCard);
+        });
+
+        // Установка карты по умолчанию
+        document.querySelectorAll('.set-default-btn').forEach(btn => {
+            btn.addEventListener('click', handleSetDefault);
+        });
+
+        // Обработка формы добавления карты
+        // const addCardForm = document.getElementById('addCardForm');
+        // if (addCardForm) {
+        //     addCardForm.addEventListener('submit', handleAddCard);
+        // }
     });
-  });
-});
 
-function getCookie(name) {
-  let cookieValue = null;
-  if (document.cookie && document.cookie !== '') {
-    const cookies = document.cookie.split(';');
-    for (let i = 0; i < cookies.length; i++) {
-      const cookie = cookies[i].trim();
-      if (cookie.substring(0, name.length + 1) === (name + '=')) {
-        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-      }
+    function handleDeleteCard(e) {
+        e.preventDefault();
+        const btn = e.currentTarget;
+        const cardId = btn.getAttribute('data-card-id');
+
+        if (!cardId) {
+            console.error('❌ Нет cardId у кнопки. Проверьте HTML-атрибут data-card-id в DOM (F12 → Elements)');
+            alert('Ошибка: не удалось определить ID карты. Откройте консоль (F12) и посмотрите, есть ли у кнопки атрибут data-card-id.');
+            return;
+        }
+
+        if (!confirm('Вы уверены, что хотите удалить эту карту?')) {
+            return;
+        }
+
+        const originalText = btn.textContent;
+        btn.disabled = true;
+        btn.textContent = 'Удаление...';
+
+        fetch(`/accounts/payment-methods/${cardId}/delete/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': getCookie('csrftoken'),
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(res => {
+            if (res.ok) {
+                location.reload();
+            } else {
+                console.error('Сервер вернул ошибку:', res.status);
+                alert('Не удалось удалить карту. Проверьте консоль (F12).');
+                btn.disabled = false;
+                btn.textContent = originalText;
+            }
+        })
+        .catch(err => {
+            console.error('Ошибка сети:', err);
+            alert('Произошла ошибка сети при удалении.');
+            btn.disabled = false;
+            btn.textContent = originalText;
+        });
+    }
+
+    function handleSetDefault(e) {
+        e.preventDefault();
+        const btn = e.currentTarget;
+        const cardId = btn.getAttribute('data-card-id');
+
+        if (!cardId) {
+            console.error('❌ Нет cardId для установки по умолчанию');
+            return;
+        }
+
+        const originalText = btn.textContent;
+        btn.disabled = true;
+        btn.textContent = 'Обработка...';
+
+        fetch(`/accounts/payment-methods/${cardId}/set-default/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': getCookie('csrftoken'),
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(res => {
+            if (res.ok) {
+                location.reload();
+            } else {
+                console.error('Сервер вернул ошибку при установке по умолчанию:', res.status);
+                alert('Не удалось сделать карту основной. Проверьте консоль.');
+                btn.disabled = false;
+                btn.textContent = originalText;
+            }
+        })
+        .catch(err => {
+            console.error('Ошибка сети при установке по умолчанию:', err);
+            alert('Произошла ошибка сети.');
+            btn.disabled = false;
+            btn.textContent = originalText;
+        });
+    }
+
+    function handleAddCard(e) {
+        e.preventDefault();
+        const form = e.target;
+        const submitBtn = form.querySelector('button[type="submit"]');
+        const originalText = submitBtn.textContent;
+
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Добавление...';
+
+        const formData = new FormData(form);
+        const data = Object.fromEntries(formData.entries());
+
+        fetch(form.action, {
+            method: form.method,
+            headers: {
+                'X-CSRFToken': getCookie('csrftoken'),
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(data)
+        })
+        .then(res => {
+            if (res.ok) {
+                // Успех: закрываем модалку и обновляем страницу
+                const modalEl = document.getElementById('addCardModal');
+                const modal = bootstrap.Modal.getInstance(modalEl);
+                modal.hide();
+                location.reload();
+            } else {
+                return res.json().catch(() => ({}));
+            }
+        })
+        .catch(err => {
+            console.error('Ошибка сети при добавлении карты:', err);
+            alert('Произошла ошибка сети. Проверьте консоль.');
+            submitBtn.disabled = false;
+            submitBtn.textContent = originalText;
+        })
+        .finally(() => {
+            // Восстановление кнопки, если не было редиректа
+            if (!document.hidden) {
+                submitBtn.disabled = false;
+                submitBtn.textContent = originalText;
+            }
+        });
+    }
+
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                }
+            }
+        }
+        return cookieValue;
+    }
+
+  function showSuccessMessage() {
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('success') === 'true') {
+      const messageDiv = document.getElementById('message');
+      messageDiv.textContent = 'Карта успешно добавлена!';
+      messageDiv.style.display = 'block';
+
+      // Убираем параметр из URL, чтобы сообщение не показывалось при перезагрузке
+      window.history.replaceState({}, document.title, window.location.pathname);
     }
   }
-  return cookieValue;
-}
+
+  document.addEventListener('DOMContentLoaded', showSuccessMessage);  
 </script>
-{% endblock %} {% endcomment %}
+
+
+
+

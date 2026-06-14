@@ -198,13 +198,36 @@ def toggle_favorite(request):
 
 #     return JsonResponse({'success': False, 'message': 'Ошибка запроса'})
 
+# def home(request):
+#     popular_products = Product.objects.filter(is_popular=True, available=True)
+#     all_products = Product.objects.all()[:8]
 
+#     return render(request, 'products/home.html', {
+#     'popular_products': popular_products,
+#     'all_products': all_products
+# })
+
+# def home_page(request):
+#     categories = Category.objects.annotate(
+#         product_count=Count('products', filter=Q(products__is_active=True))
+#     ).order_by('name')
+#     popular_products = Product.objects.filter(is_active=True)[:8]
+#     latest_products = Product.objects.filter(is_active=True).order_by('-created_at')[:8]
+
+#     return render(request, 'products/home.html', {
+#         'categories': categories,
+#         'popular_products': popular_products,
+#         'latest_products': latest_products
+#     })
 
 def home_page(request):
     categories = Category.objects.annotate(
         product_count=Count('products', filter=Q(products__is_active=True))
     ).order_by('name')
-    popular_products = Product.objects.filter(is_active=True)[:8]
+    
+    # ИСПРАВЛЕНИЕ: Фильтруем по is_popular и is_active
+    popular_products = Product.objects.filter(is_popular=True, is_active=True)[:8]
+    
     latest_products = Product.objects.filter(is_active=True).order_by('-created_at')[:8]
 
     return render(request, 'products/home.html', {
@@ -212,7 +235,6 @@ def home_page(request):
         'popular_products': popular_products,
         'latest_products': latest_products
     })
-
 
 def product_list(request):
     products = Product.objects.filter(is_active=True)
@@ -388,11 +410,3 @@ def about(request):
 #     return render(request, 'products/home.html', context)
 
 
-def home(request):
-    popular_products = Product.objects.filter(is_popular=True, available=True)
-    all_products = Product.objects.all()[:8]
-
-    return render(request, 'products/home.html', {
-    'popular_products': popular_products,
-    'all_products': all_products
-})

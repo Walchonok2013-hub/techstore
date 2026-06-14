@@ -5,8 +5,6 @@ from django.contrib.auth import views as auth_views
 app_name = 'user'
 
 urlpatterns = [
-    # Главная страница приложения
-    path('', views.home, name='home'),
 
     # Регистрация пользователя
     path('register/', views.register, name='register'),

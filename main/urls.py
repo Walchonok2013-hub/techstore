@@ -6,6 +6,8 @@ app_name = 'main'  # это и есть namespace
 urlpatterns = [
     path('', views.index, name='home'),
     path('about/', views.about, name='about'),
+    path('contacts/', views.about, name='contacts'),
+    path('delivery/', views.about, name='delivery'),
     path('categories/', views.categories, name='categories'), 
     path('', views.index, name='index'),
 ]
