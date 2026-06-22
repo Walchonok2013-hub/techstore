@@ -78,9 +78,10 @@ def login_view(request):
 def logout_view(request):
     username = request.user.username
     logout(request)
-    messages.info(request, f'{username}, вы успешно вышли из системы')
-    return redirect('main:index')
-@login_required
+    messages.info(request, f'{username}, Вы успешно вышли из системы')
+    return redirect('products:home')
+
+
 @login_required
 def payment_methods_view(request):
     # Берем только карты текущего пользователя

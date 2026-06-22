@@ -1,0 +1,97 @@
+
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Доставка и оплата — TechStore{% endblock %}
+
+{% block content %}
+<section class="py-5 bg-light">
+    <div class="container">
+        <div class="text-center mb-5">
+            <h1 class="display-5 fw-bold text-primary">Доставка и оплата</h1>
+            <p class="lead text-muted">Простые и удобные условия для ваших покупок</p>
+        </div>
+
+        <div class="row g-4">
+            <!-- Доставка -->
+            <div class="col-md-6">
+                <div class="bg-white p-4 rounded shadow-sm h-100">
+                    <div class="d-flex align-items-center mb-3">
+                        <div class="bg-primary rounded-circle d-flex align-items-center justify-content-center me-3" style="width: 40px; height: 40px;">
+                    <i class="fas fa-truck text-white"></i>
+                </div>
+                <h2 class="h4 mb-0">Доставка</h2>
+            </div>
+            <ul class="ps-0">
+                {% for delivery_method in delivery_methods %}
+                <li class="mb-3 ps-4 position-relative">
+                    <span class="position-absolute start-0 text-primary">
+                <i class="fas fa-check"></i>
+            </span>
+            {{ delivery_method.name }}
+            {% if delivery_method.price %}
+                <span class="text-muted ms-2">({{ delivery_method.price }})</span>
+            {% endif %}
+            {% if delivery_method.description %}
+                <small class="d-block text-muted mt-1">{{ delivery_method.description }}</small>
+            {% endif %}
+                </li>
+                {% endfor %}
+            </ul>
+                </div>
+            </div>
+
+            <!-- Оплата -->
+            <div class="col-md-6">
+                <div class="bg-white p-4 rounded shadow-sm h-100">
+            <div class="d-flex align-items-center mb-3">
+                <div class="bg-success rounded-circle d-flex align-items-center justify-content-center me-3" style="width: 40px; height: 40px;">
+            <i class="fas fa-credit-card text-white"></i>
+                </div>
+                <h2 class="h4 mb-0">Оплата</h2>
+            </div>
+            <ul class="ps-0">
+                {% for payment_method in payment_methods %}
+                <li class="mb-3 ps-4 position-relative">
+            <span class="position-absolute start-0 text-success">
+                <i class="fas fa-check"></i>
+            </span>
+            {{ payment_method.name }}
+            {% if payment_method.description %}
+                <small class="d-block text-muted mt-1">{{ payment_method.description }}</small>
+            {% endif %}
+                </li>
+                {% endfor %}
+            </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Важная информация -->
+        <div class="row mt-5">
+            <div class="col-12">
+                <div class="bg-warning bg-opacity-10 border border-warning rounded p-4">
+                    <div class="d-flex">
+                <div class="me-3 text-warning">
+                    <i class="fas fa-exclamation-triangle fa-lg"></i>
+                </div>
+                <div>
+                    <h4 class="h6 mb-2">Важно знать</h4>
+            <p class="mb-0">Для крупногабаритных товаров и заказов свыше 50 000 руб. доставка рассчитывается индивидуально.
+               Свяжитесь с нами для уточнения деталей.</p>
+                </div>
+            </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Контакты -->
+        <div class="row mt-4">
+            <div class="col-12 text-center">
+                <p>Остались вопросы? Звоните: <strong>+7 (495) 123-45-67</strong>
+          или пишите: <a href="mailto:info@techstore.ru">info@techstore.ru</a></p>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

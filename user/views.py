@@ -29,7 +29,7 @@ def login_view(request):
             if user is not None:
                 login(request, user)
                 messages.success(request, f'Добро пожаловать, {username}!')
-                return redirect('main:index')  # перенаправление на главную
+                return redirect('index:home')  # перенаправление на главную
             else:
                 messages.error(request, 'Неверные учётные данные')
         # else:

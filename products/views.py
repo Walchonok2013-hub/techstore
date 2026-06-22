@@ -14,7 +14,7 @@ from django.db.models import Exists, OuterRef
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
-
+from products import views
 
 from .models import Favorite
 @require_POST
@@ -294,6 +294,15 @@ def product_detail(request, slug):
     })
 
 
+def product_detail_view(request, slug):
+    # Ищем товар по полю slug. Если нет - вернем 404
+    product = get_object_or_404(Product, slug=slug)
+    
+    context = {
+        'product': product,
+        # Добавьте сюда другие нужные переменные, если есть
+    }
+    return render(request, 'products/product_detail.html', context)
 #     cart_product_form = CartAddProductForm()
 
 #     return render(request, 'products/product_detail.html', {
@@ -329,10 +338,27 @@ def category_detail(request, slug):
         'products': products
     })
 
+# def catalog(request):
+#     products = Product.objects.all()
+#     return render(request, 'products/catalog.html', {'products': products})
 def catalog(request):
     products = Product.objects.all()
-    return render(request, 'products/catalog.html', {'products': products})
+    categories = Category.objects.all()
 
+    # Логика фильтрации (если нужна)
+    min_price = request.GET.get('min_price')
+    max_price = request.GET.get('max_price')
+
+    if min_price:
+        products = products.filter(price__gte=min_price)
+    if max_price:
+        products = products.filter(price__lte=max_price)
+
+    context = {
+        'products': products,
+        'categories': categories,
+    }
+    return render(request, 'products/catalog.html', context)
 def search(request):
     query = request.GET.get('q', '')
     products = Product.objects.none()
@@ -400,13 +426,40 @@ def contacts(request):
 def about(request):
     return render(request, 'products/about.html')
 
-# def catalog_view(request):
-#     return render(request, 'products/catalog.html')
+def catalog_view(request):
+    products = Product.objects.all()
+    categories = Category.objects.all()
+    
+    # 1. ФИЛЬТРАЦИЯ ПО ЦЕНЕ
+    min_price = request.GET.get('min_price')
+    max_price = request.GET.get('max_price')
+    
+    if min_price:
+        products = products.filter(price__gte=min_price)
+    if max_price:
+        products = products.filter(price__lte=max_price)
 
+    # 2. ФИЛЬТРАЦИЯ ПО КАТЕГОРИИ
+    category_id = request.GET.get('category')
+    if category_id:
+        products = products.filter(category_id=category_id)
 
-# def home(request):
-#     products = Product.objects.all()[:8]
-#     context = {'products': products}
-#     return render(request, 'products/home.html', context)
+    # 3. ПАГИНАЦИЯ (если используете Paginator)
+    # from django.core.paginator import Paginator
+    # paginator = Paginator(products, 9)
+    # page_number = request.GET.get('page')
+    # products = paginator.get_page(page_number)
 
+    # 4. СПИСОК ИЗБРАННЫХ (КРИТИЧНО ВАЖНО)
+    if request.user.is_authenticated:
+        # Получаем ID товаров, которые пользователь добавил в избранное
+        favorites = request.user.favorites.all().values_list('id', flat=True)
+    else:
+        favorites = []
 
+    context = {
+        'products': products,
+        'categories': categories,
+        'favorites': favorites,  # <--- ЭТА ПЕРЕМЕННАЯ НУЖНА ДЛЯ СЕРДЕЧКА
+    }
+    return render(request, 'products/catalog.html', context)
