@@ -16,6 +16,9 @@ from django.http import HttpResponse
 
 
 
+
+
+
 @require_POST
 @csrf_protect
 def cart_add(request, product_id):
@@ -25,53 +28,23 @@ def cart_add(request, product_id):
 
     if form.is_valid():
         cd = form.cleaned_data
-        try:
-            quantity = int(cd['quantity'])  # Приводим к int
-            if quantity < 1:
-                raise ValueError("Количество должно быть положительным")
-        except (ValueError, TypeError):
-            # Обрабатываем ошибку — например, возвращаем сообщение пользователю
-            messages.error(request, "Некорректное количество товара")
-            return redirect('cart:detail')
-
+        quantity = cd['quantity']
         update_quantity = cd['update']
         cart.add(product=product, quantity=quantity, update_quantity=update_quantity)
-        return redirect('cart:detail')
+
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return JsonResponse({
+                'success': True,
+                'message': 'Товар добавлен в корзину',
+                'total_items': len(cart),
+                'total_price': str(cart.get_total_price())
+            })
     else:
-        # Обработка ошибок формы
-        messages.error(request, "Ошибка в форме")
-        #return redirect('products:product_detail', id=product_id)
-        return redirect('products:product_detail', slug=product.slug)
-# @require_POST
-# @csrf_protect
-# def cart_add(request, product_id):
-#     """Добавление товара в корзину"""
-#     cart = Cart(request)
-#     product = get_object_or_404(Product, id=product_id)
-#     form = CartAddProductForm(request.POST)
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return JsonResponse({'success': False, 'errors': form.errors}, status=400)
 
-#     if form.is_valid():
-#         cd = form.cleaned_data
-#         quantity = cd['quantity']
-#         update_quantity = cd['update']
-#         cart.add(product=product, quantity=quantity, update_quantity=update_quantity)
-#         # Для AJAX‑запросов возвращаем JSON
-#         if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-#             return JsonResponse({
-#                 'success': True,
-#                 'message': 'Товар добавлен в корзину',
-#                 'total_items': len(cart),
-#                 'total_price': str(cart.get_total_price())
-#             })
-#     else:
-#         # Возвращаем ошибки формы для AJAX
-#         if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-#             return JsonResponse({
-#                 'success': False,
-#                 'errors': form.errors
-#             }, status=400)
-
-#     return redirect('cart:cart_detail')
+    # ПРАВИЛЬНЫЙ редирект:
+    return redirect('cart:detail')
 
 def cart_remove(request, product_id):
     """Удаление товара из корзины"""

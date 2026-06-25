@@ -34,21 +34,17 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'carts',
+    
     'products',
     'cart',
-    'shop',
-    'orders',
-    'goods',
-    'main',
-    'user',
     'accounts',
-    'home',
-    'myapp',
-    # 'modeltranslation',
+    'orders',
+    'main',
+    'carts',
+    
 ]
 
-AUTH_USER_MODEL = 'accounts.User'
+
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
@@ -61,27 +57,13 @@ MIDDLEWARE = [
 
 ROOT_URLCONF = 'techstore.urls'
 
-# TEMPLATES = [
-#     {
-#         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-#         'DIRS': [
-#             BASE_DIR / 'templates',  # Папка с общими шаблонами
-#             BASE_DIR / 'orders' / 'templates',  # шаблоны приложения orders
-#             BASE_DIR / 'user' / 'templates',  # папка шаблонов приложения user
-#         ],
-#         'APP_DIRS': True,
-#         'OPTIONS': {
-#             'context_processors': [
-#                 'django.template.context_processors.debug',
-#                 'django.template.context_processors.request',
-#                 'django.contrib.auth.context_processors.auth',
-#                 'django.contrib.messages.context_processors.messages',
-#                 # 'cart.context_processors.cart',  # Закомментируйте строку
-#             ],
-#         },
-#     },
-# ]
+CSRF_TRUSTED_ORIGINS = ['http://127.0.0.1:8000', 'http://localhost:8000']
+EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 
+
+
+STATIC_URL = '/static/'
+STATICFILES_DIRS = [os.path.join(BASE_DIR, 'static')]
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
@@ -92,6 +74,7 @@ TEMPLATES = [
                 'django.template.context_processors.debug',
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
+                
                 'django.contrib.messages.context_processors.messages',
                 # Ваша строка:
                 'products.context_processors.categories_processor',  # Замените 'products' на имя вашего приложения
@@ -147,7 +130,7 @@ STATIC_ROOT = BASE_DIR / 'staticfiles'  # Корректный путь чере
 STATICFILES_DIRS = [BASE_DIR / 'static']  # Используем единый подход с Path
 
 # Медиафайлы
-
+MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'  # Используем Path
 
 STATICFILES_DIRS = [

@@ -40,50 +40,6 @@ class Cart:
 
         self.save()
 
-    # def add(self, product, quantity=1, update_quantity=False):
-    #     """Добавление товара в корзину или обновление количества"""
-    # # Валидация входных данных
-    #     if not product or not hasattr(product, 'id') or not hasattr(product, 'price'):
-    #         raise ValueError("Некорректный объект товара: отсутствует id или price")
-
-
-    #     if product.price is None:
-    #         raise ValueError(f"Товар {product.id} не имеет установленной цены")
-
-
-    #     try:
-    #         quantity = int(quantity)
-    #     except (ValueError, TypeError):
-    #         raise ValueError("Количество должно быть целым числом")
-
-
-    #     if quantity < 0:
-    #         raise ValueError("Количество не может быть отрицательным")
-
-    #     product_id = str(product.id)
-
-
-    # Инициализация корзины, если ещё не создана
-    #     if not self.cart:
-    #         self.cart = {}
-
-    #     if product_id not in self.cart:
-    #     # Добавляем новый товар с переданным количеством
-    #         self.cart[product_id] = {
-    #             'quantity': quantity,
-    #             'price': str(product.price)
-    #         }
-    #     else:
-    #         if update_quantity:
-    #             self.cart[product_id]['quantity'] = quantity
-    #         else:
-    #             self.cart[product_id]['quantity'] += quantity
-
-    # # Дополнительная проверка: не допускаем отрицательных количеств
-    #     if self.cart[product_id]['quantity'] < 0:
-    #         self.cart[product_id]['quantity'] = 0
-
-    #     self.save()
 
     def save(self):
         """Сохраняет корзину в сессию"""
@@ -128,34 +84,7 @@ class Cart:
                 temp_item['price'] = Decimal('0')
                 temp_item['total_price'] = Decimal('0')
                 yield temp_item
-    # def __iter__(self):
-    #     """Перебор элементов корзины и получение товаров из БД"""
-    #     product_ids = self.cart.keys()
 
-    #     # Получаем товары из БД только если корзина не пуста
-    #     if product_ids:
-    #         products = Product.objects.filter(id__in=product_ids)
-    #         product_dict = {product.id: product for product in products}
-    #     else:
-    #         product_dict = {}
-
-    #     # Копируем корзину, чтобы не изменять оригинал
-    #     cart_copy = self.cart.copy()
-
-    #     for product_id, item in cart_copy.items():
-    #         if int(product_id) in product_dict:
-    #             # Добавляем объект товара ТОЛЬКО во временную копию
-    #             item['product'] = product_dict[int(product_id)]
-    #             # Преобразуем цену в Decimal
-    #             item['price'] = Decimal(item['price'])
-    #             # Вычисляем общую стоимость для этого товара
-    #             item['total_price'] = item['price'] * item['quantity']
-    #         else:
-    #             # Если товар не найден в БД, помечаем его как удалённый
-    #             item['product'] = None
-    #             item['price'] = Decimal('0')
-    #             item['total_price'] = Decimal('0')
-    #         yield item
 
     def __len__(self):
         """Возвращает общее количество товаров в корзине"""

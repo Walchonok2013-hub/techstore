@@ -1,4 +1,3 @@
-
 {% extends 'base.html' %}
 {% block title %}Адреса доставки — Techstore{% endblock %}
 
@@ -11,35 +10,48 @@
         </a>
     </div>
 
+    <!-- Блок для сообщения об успехе (если передали в контексте) -->
+    {% if message %}
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    {% endif %}
+
     {% if addresses %}
         <div class="row g-4">
-            {% for address in addresses %}
-            <div class="col-12 col-md-6">
-                <div class="card border-0 shadow-sm h-100">
-            <div class="card-body">
-                <div class="d-flex justify-content-between align-items-start mb-3">
-                    <h5 class="card-title mb-0">{{ address.title }}</h5>
-            {% if address.is_default %}
-                <span class="badge bg-primary">Основной</span>
-            {% endif %}
-                </div>
 
-                <address class="mb-3">
-            {{ address.full_address }}<br>
-            Телефон: {{ address.phone }}<br>
-            {% if address.notes %}
-                Примечания: {{ address.notes }}
-            {% endif %}
-                </address>
 
-                <div class="d-flex gap-2">
-            <button class="btn btn-sm btn-outline-primary">Редактировать</button>
-            {% if not address.is_default %}
-                <button class="btn btn-sm btn-outline-danger">Удалить</button>
+{% for addr in addresses %}
+<div class="address-card">
+    <div style="display: flex; justify-content: space-between; align-items: center;">
+        <div>
+            <strong>{{ addr.title }}</strong>
+            {% if addr.is_default %}
+                <span style="background: #007bff; color: white; padding: 2px 6px; border-radius: 4px; font-size: 0.8em;">Основной</span>
             {% endif %}
-                </div>
-            </div>
+            <br>
+            <small>Адрес: {{ addr.full_address }}</small><br>
+            <small>Телефон: {{ addr.phone }}</small>
         </div>
+        
+        <!-- АКТИВНАЯ КНОПКА РЕДАКТИРОВАНИЯ -->
+        <a href="{% url 'accounts:edit_address' addr.id %}" class="btn btn-primary">
+            Редактировать
+        </a>
+    </div>
+    <hr style="margin: 10px 0; border: 0; border-top: 1px solid #eee;">
+</div>
+{% empty %}
+<p>У вас пока нет сохраненных адресов.</p>
+
+
+                            {% if not address.is_default %}
+                                <button class="btn btn-sm btn-outline-danger">Удалить</button>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
             </div>
             {% endfor %}
         </div>
@@ -52,52 +64,54 @@
     {% endif %}
 
     <!-- Модальное окно добавления адреса -->
-    <div class="modal fade" id="addAddressModal" tabindex="-1">
+    <div class="modal fade" id="addAddressModal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title">Добавить новый адрес</h5>
-            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
-            <!-- Форма добавления адреса -->
-            <form>
-                <div class="mb-3">
-                    <label class="form-label">Название адреса</label>
-            <input type="text" class="form-control" placeholder="Дом, Работа и т.д.">
+                    <!-- ВАЖНО: action ссылается на имя URL из urls.py, method POST обязателен -->
+                   <form action="{% url 'accounts:create_address' %}" method="POST">
+                        {% csrf_token %}
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Название адреса (для себя)</label>
+                            <input type="text" name="title" class="form-control" value="Основной" placeholder="Например: Дом, Работа">
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Полный адрес</label>
+                            <textarea name="full_address" class="form-control" rows="3" required placeholder="Город, улица, дом, квартира"></textarea>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Телефон</label>
+                            <input type="tel" name="phone" class="form-control" required placeholder="+7 (999) 999-99-99">
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Примечания для курьера (опционально)</label>
+                            <textarea name="notes" class="form-control" rows="2" placeholder="Код домофона, этаж, ориентир"></textarea>
+                        </div>
+
+                        <div class="mb-3 form-check">
+                            <input class="form-check-input" type="checkbox" name="is_default" id="isDefault">
+                            <label class="form-check-label" for="isDefault">
+                                Сделать адресом по умолчанию
+                            </label>
+                        </div>
+
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                            <!-- Кнопка внутри формы с type="submit" -->
+                            <button type="submit" class="btn btn-primary">Сохранить адрес</button>
+                        </div>
+                    </form>
                 </div>
-                <div class="mb-3">
-
-<label class="form-label">Полный адрес</label>
-<textarea class="form-control" rows="3" placeholder="Город, улица, дом, квартира" required></textarea>
-</div>
-<div class="mb-3">
-    <label class="form-label">Телефон</label>
-    <input type="tel" class="form-control" placeholder="+7 (999) 999-99-99" required>
-</div>
-<div class="mb-3">
-    <label class="form-label">Название адреса</label>
-    <input type="text" class="form-control" placeholder="Дом, Работа, Дача и т.д." required>
-</div>
-<div class="mb-3">
-    <label class="form-label">Примечания для курьера (опционально)</label>
-    <textarea class="form-control" rows="2" placeholder="Код домофона, этаж, ориентир"></textarea>
-</div>
-<div class="mb-3 form-check">
-    <input class="form-check-input" type="checkbox" id="isDefault">
-    <label class="form-check-label" for="isDefault">
-        Сделать адресом по умолчанию
-    </label>
-</div>
-</form>
-</div>
-<div class="modal-footer">
-    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
-    <button type="submit" class="btn btn-primary">Сохранить адрес</button>
-</div>
-</div>
-</div>
-</div>
-
+            </div>
+        </div>
+    </div>
 </div>
 {% endblock %}

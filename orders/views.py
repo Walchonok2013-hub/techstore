@@ -9,7 +9,7 @@ from django.db import transaction
 from django.contrib import messages
 from django.shortcuts import render, redirect
 import logging
-from shop.models import Product  # укажите корректный путь к модели Product
+
 logger = logging.getLogger(__name__)
 
 
@@ -81,9 +81,7 @@ def order_confirmation(request, order_id):
     # Получаем заказ или выдаём ошибку 404, если не найден
     order = get_object_or_404(Order, id=order_id)
     return render(request, 'orders/confirmation.html', {'order': order})
-# def order_confirmation(request, order_id):
-#     # Здесь можно добавить логику получения заказа и передачи его в шаблон
-#     return render(request, 'orders/confirmation.html', {'order_id': order_id})
+
 
 @login_required
 def my_orders(request):
@@ -92,7 +90,6 @@ def my_orders(request):
 
 
 def product_list(request):
-    from shop.models import Product
     products = Product.objects.all()
     return render(request, 'orders/product_list.html', {'products': products})
 

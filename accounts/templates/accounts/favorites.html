@@ -1,0 +1,146 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+  <div class="container my-4">
+    <div class="row">
+      <div class="col-lg-12">
+        <h1 class="mb-4">{{ title }}</h1>
+
+        {% if page_obj %}
+          <div class="row g-4">
+            {% for fav in page_obj %}
+              <div class="col-md-6 col-lg-4 col-xl-3">
+                <div class="card h-100 position-relative">
+
+                  <!-- Кнопка удаления из избранного -->
+                  <button
+                      type="button"
+                      class="btn favorite-btn position-absolute top-0 end-0 m-2 d-flex align-items-center justify-content-center"
+                      data-product-id="{{ fav.product.id }}"
+                      title="Удалить из избранного"
+                      onclick="toggleFavorite(this, {{ fav.product.id }})"
+                      style="width: 36px; height: 36px; padding: 0;"
+                  >
+                    <i class="bi bi-heart-fill text-danger" style="font-size: 1.2rem;"></i>
+                  </button>
+
+                  {% if fav.product.image %}
+                    <img src="{{ fav.product.image.url }}" class="card-img-top" alt="{{ fav.product.name }}" loading="lazy">
+                  {% else %}
+                    <div class="card-img-top bg-light d-flex align-items-center justify-content-center" style="height: 200px;">
+                      <span class="text-muted">Нет фото</span>
+                    </div>
+                  {% endif %}
+
+                  <div class="card-body d-flex flex-column">
+                    <h5 class="card-title">{{ fav.product.name }}</h5>
+                    <p class="card-text flex-grow-1">{{ fav.product.description|truncatewords:10 }}</p>
+
+                    <div class="mt-auto">
+                      {% if fav.product.discount_percent %}
+                        <div class="d-flex align-items-baseline mb-2">
+                          <span class="price-badge">-{{ fav.product.discount_percent }}%</span>
+                          <span class="text-decoration-line-through text-muted me-2 ms-2">{{ fav.product.original_price }} ₽</span>
+                          <span class="h5 fw-bold text-primary">{{ fav.product.price }} ₽</span>
+                        </div>
+                      {% else %}
+                        <span class="h5 fw-bold text-primary">{{ fav.product.price }} ₽</span>
+                      {% endif %}
+
+                      <form action="{% url 'cart:add' fav.product.id %}" method="post" class="mt-3">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-outline-success w-100">
+                          В корзину
+                        </button>
+                      </form>
+
+                      <a href="{% url 'products:product_detail' fav.product.slug %}" class="btn btn-outline-primary w-100 mt-2">
+                        Подробнее
+                      </a>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            {% endfor %}
+          </div>
+
+          <!-- Пагинация -->
+          {% if page_obj.has_other_pages %}
+            <nav aria-label="Page navigation" class="mt-5">
+              <ul class="pagination justify-content-center">
+                {% if page_obj.has_previous %}
+                  <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.previous_page_number }}">Назад</a>
+                  </li>
+                {% endif %}
+                <li class="page-item active">
+                  <span class="page-link">Страница {{ page_obj.number }} из {{ page_obj.paginator.num_pages }}</span>
+                </li>
+                {% if page_obj.has_next %}
+                  <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.next_page_number }}">Вперед</a>
+                  </li>
+                {% endif %}
+              </ul>
+            </nav>
+          {% endif %}
+
+        {% else %}
+          <!-- Сообщение, если нет избранных товаров -->
+          <div class="text-center py-5">
+            <i class="bi bi-heart fs-1 text-muted opacity-50"></i>
+            <h4 class="mt-3 text-muted">Список избранного пуст</h4>
+            <p class="text-muted">Вы пока не добавили ни одного товара в избранное.</p>
+            <a href="{% url 'products:catalog' %}" class="btn btn-primary">Перейти в каталог</a>
+          </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}">
+
+  <script>
+    function toggleFavorite(btn, productId) {
+        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value;
+
+        fetch(`/accounts/favorites/${productId}/toggle/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrfToken,
+            },
+            body: JSON.stringify({}),
+        })
+        .then(response => {
+            if (!response.ok) throw new Error('Ошибка сети или сервера');
+            return response.json();
+        })
+        .then(data => {
+            if (data.action === 'removed') {
+                const card = btn.closest('.card');
+                if (card) {
+                    card.style.opacity = '0';
+                    setTimeout(() => card.remove(), 300);
+                }
+                updateWishlistCount();
+            }
+        })
+        .catch(error => {
+            console.error('Ошибка при переключении избранного:', error);
+            alert('Не удалось изменить избранное. Обновите страницу.');
+        });
+    }
+
+    function updateWishlistCount() {
+        const countEl = document.getElementById('wishlist-count');
+        if (countEl) {
+            const current = parseInt(countEl.textContent) || 0;
+            countEl.textContent = Math.max(0, current - 1);
+        }
+    }
+  </script>
+{% endblock %}

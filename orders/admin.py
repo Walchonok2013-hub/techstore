@@ -1,25 +1,24 @@
+
 from django.contrib import admin
-from django.conf import settings
-from .models import Order, OrderItem, Product
+from .models import Order, OrderItem, Payment
 
 @admin.register(Order)
 class OrderAdmin(admin.ModelAdmin):
-    list_display = ['id', 'user', 'first_name', 'last_name',
-                   'email', 'address', 'city', 'postal_code',
-                   'created', 'updated', 'paid']
-    list_filter = ['paid', 'created', 'updated']
-
-    # Убрали 'status' из list_display и list_filter
+    list_display = ('id', 'user', 'status', 'total_price', 'created_at')
+    list_filter = ('status', 'created_at')
+    search_fields = ('user__username', 'id')
 
 @admin.register(OrderItem)
 class OrderItemAdmin(admin.ModelAdmin):
-    list_display = ['order', 'product', 'price', 'quantity']
+    list_display = ('order', 'product', 'quantity', 'price')
+    list_filter = ('order',)
 
-@admin.register(Product)
-class ProductAdmin(admin.ModelAdmin):
-    list_display = ['name', 'price', 'in_stock', 'slug']
-    list_filter = ['in_stock']  # Убрали 'created' из list_filter
-    prepopulated_fields = {'slug': ('name',)}
+@admin.register(Payment)
+class PaymentAdmin(admin.ModelAdmin):
+    list_display = ('order', 'payment_method', 'amount', 'is_completed', 'completed_at')
+    list_filter = ('payment_method', 'is_completed')
+
+
 
 
 

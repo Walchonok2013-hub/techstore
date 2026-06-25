@@ -1,19 +1,49 @@
 
-<h1>Поиск товаров</h1>
-<form method="get">
-    <input type="text" name="q" value="{{ query }}" placeholder="Введите запрос...">
-    <button type="submit">Найти</button>
-</form>
+{% extends 'base.html' %}
 
-{% if products %}
-    <div class="products">
-        {% for product in products %}
-            <div class="product">
-                <h3>{{ product.name }}</h3>
-                <p>{{ product.price }} руб.</p>
+{% block title %}Поиск: {{ query }}{% endblock %}
+
+{% block content %}
+<div class="search-container">
+    <h1>Поиск товаров</h1>
+
+    <!-- Форма поиска -->
+    <form action="{% url 'products:search' %}" method="get" class="search-form">
+        <input type="text" name="q" value="{{ query }}" placeholder="Что ищем?" class="search-input">
+        <button type="submit" class="search-btn">Найти</button>
+    </form>
+
+    <!-- Статистика -->
+    {% if query %}
+        <p class="search-stats">Найдено товаров: {{ products.count }}</p>
+    {% endif %}
+
+    <!-- Сетка товаров -->
+    <div class="products-grid">
+        {% if products %}
+            {% for product in products %}
+                <div class="product-card">
+                    <!-- Блок с картинкой (ограничивает её размер) -->
+                    <div class="product-img-wrapper">
+                        {% if product.image %}
+                            <img src="{{ product.image.url }}" alt="{{ product.name }}" class="product-img">
+                        {% else %}
+                            <div class="product-img-placeholder">Нет фото</div>
+                        {% endif %}
+                    </div>
+                    
+                    <h3 class="product-title">{{ product.name }}</h3>
+                    <p class="product-price">{{ product.price|floatformat:2 }} руб.</p>
+                    
+                    <a href="{% url 'products:product_detail' product.slug %}" class="product-link">Подробнее</a>
+                </div>
+            {% endfor %}
+        {% else %}
+            <div class="no-results">
+                <h3>Ничего не найдено</h3>
+                <p>По запросу «{{ query }}» товаров не обнаружено. Попробуйте изменить формулировку.</p>
             </div>
-        {% endfor %}
+        {% endif %}
     </div>
-{% elif query %}
-    <p>По запросу «{{ query }}» ничего не найдено.</p>
-{% endif %}
+</div>
+{% endblock %}

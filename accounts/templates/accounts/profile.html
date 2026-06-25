@@ -1,230 +1,235 @@
-{% extends 'base.html' %}
+ {% extends 'base.html' %}
 {% load static %}
 
 {% block title %}Мой профиль — Магазин товаров{% endblock %}
 
+
 {% block extra_css %}
 <style>
-    /* Контейнер профиля */
-    .profile-container {
-        max-width: 1200px;
-        margin: 0 auto;
+    /* Общий фон страницы (если нужно) */
+    body {
+        background-color: #f8f9fa;
+        color: #333;
     }
 
-    /* Верхняя панель */
+    /* Контейнер профиля */
+    .profile-container {
+        max-width: 1100px;
+        margin: 0 auto;
+        padding: 2rem 1rem;
+    }
+
+    /* Заголовок и кнопка «Выйти» */
     .header {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        padding: 2rem 0;
-        border-bottom: 1px solid #e9ecef;
         margin-bottom: 2rem;
     }
 
     .header h1 {
-        color: #17191b;
+        font-size: 1.75rem;
         font-weight: 600;
+        color: #1a1a1a;
     }
 
-    .logout-btn {
+    .btn-logout {
         background-color: #dc3545;
         color: white;
         padding: 0.5rem 1rem;
-        border-radius: 0.375rem;
+        border-radius: 6px;
         text-decoration: none;
+        font-size: 0.9rem;
         font-weight: 500;
         transition: background-color 0.2s;
     }
 
-    .logout-btn:hover {
+    .btn-logout:hover {
         background-color: #c82333;
-        color: white;
     }
 
-    /* Аватар */
-    .avatar-container {
-        display: inline-block;
-        border: 3px solid #1d856e;
-        padding: 3px;
-        border-radius: 50%;
+    /* Уведомление «Профиль успешно обновлён» */
+    .alert-success {
+        background-color: #d4edda;
+        color: #155724;
+        padding: 1rem;
+        border-radius: 6px;
+        margin-bottom: 1.5rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .alert-success .close-btn {
+        background: none;
+        border: none;
+        font-size: 1.2rem;
+        cursor: pointer;
+        color: #155724;
+        line-height: 1;
+    }
+
+    /* Левая колонка: аватар и данные */
+    .profile-left {
+        background: white;
+        padding: 1.5rem;
+        border-radius: 12px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.05);
         margin-bottom: 1.5rem;
     }
 
-    .avatar {
-        width: 150px;
-        height: 150px;
-        object-fit: cover;
+    .avatar-wrapper {
+        width: 80px;
+        height: 80px;
         border-radius: 50%;
-    }
-
-    /* Карточки */
-    .card {
-        border: none;
-        border-radius: 1rem;
-        overflow: hidden;
-        transition: transform 0.2s, box-shadow 0.2s;
-    }
-
-    .card:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
-    }
-
-    .card-header {
-        font-weight: 500;
-        padding: 1rem 1.25rem;
-        background-color: #f8f9fa;
-    }
-
-    .card-body {
-        padding: 1.5rem;
-    }
-
-    /* Список действий */
-    .list-group-item {
-        padding: 1rem 1.25rem;
-        border: 1px solid #e9ecef;
-        border-left: none;
-        border-right: none;
-    }
-
-    .list-group-item:hover {
-        background-color: #f8f9fa;
-    }
-
-    .list-group-item a {
+        background-color: #e9ecef;
+        color: #888;
         display: flex;
         align-items: center;
+        justify-content: center;
+        font-weight: bold;
+        font-size: 1.5rem;
+        margin-bottom: 1rem;
+        overflow: hidden;
+    }
+
+    .avatar-wrapper img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    .profile-name {
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: #1a1a1a;
+        margin-bottom: 0.25rem;
+    }
+
+    .profile-info p {
+        font-size: 0.9rem;
+        color: #666;
+        margin-bottom: 0.25rem;
+    }
+
+    .profile-info strong {
         color: #333;
-        text-decoration: none;
-        transition: color 0.2s;
     }
 
-    .list-group-item a:hover {
-        color: #6bc2b6;
+    /* Меню действий (кнопки) */
+    .action-menu {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+        margin-bottom: 2rem;
     }
 
-    /* Статистика покупок */
-    .purchase-stats {
+    .btn-outline {
+        background: white;
+        border: 1px solid #dee2e6;
+        color: #495057;
+        padding: 0.5rem 1rem;
+        border-radius: 6px;
+        font-size: 0.875rem;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+    .btn-outline:hover {
+        border-color: #8E2DE2;
+        color: #8E2DE2;
+        background-color: #f8e5ff;
+    }
+
+    /* Статистика (карточки как на фото) */
+    .stats-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
         gap: 1rem;
         margin-bottom: 2rem;
     }
 
     .stat-card {
-        text-align: center;
-        padding: 1.5rem;
-        background: linear-gradient(135deg, #486fee 0%, #5b2aaaa2 100%);
+        background: linear-gradient(135deg, #8E2DE2 0%, #4A00E0 100%);
         color: white;
-        border-radius: 1rem;
+        padding: 1.25rem;
+        border-radius: 12px;
+        text-align: center;
+        box-shadow: 0 4px 12px rgba(142, 45, 226, 0.25);
     }
 
     .stat-number {
-        font-size: 2.5rem;
-        font-weight: bold;
+        font-size: 1.75rem;
+        font-weight: 700;
+        line-height: 1.2;
         display: block;
     }
 
     .stat-label {
-        font-size: 0.9rem;
-        opacity: 0.9;
+        font-size: 0.875rem;
+        opacity: 0.95;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
     }
 
-    /* История заказов */
+    /* Блок «Последние заказы» */
+    .orders-block {
+        background: white;
+        padding: 1.5rem;
+        border-radius: 12px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    }
+
+    .orders-block h3 {
+        font-size: 1.125rem;
+        font-weight: 600;
+        margin-bottom: 1rem;
+        color: #333;
+    }
+
     .order-item {
-        border-bottom: 1px solid #e9ecef;
+        border-bottom: 1px solid #eee;
         padding: 1rem 0;
+    }
+
+    .order-item:last-child {
+        border-bottom: none;
     }
 
     .order-header {
         display: flex;
         justify-content: space-between;
         align-items: center;
-    }
-
-    .order-status {
-        padding: 0.25rem 0.75rem;
-        border-radius: 20px;
-        font-size: 0.8rem;
-        font-weight: 500;
-    }
-
-    .status-delivered {
-        background-color: #d4edda;
-        color: #155724;
-    }
-
-    .status-processing {
-        background-color: #fff3cd;
-        color: #856404;
-    }
-
-    .status-cancelled {
-        background-color: #f8d7da;
-        color: #721c24;
+        margin-bottom: 0.25rem;
     }
 
     .order-total {
-        font-weight: 600;
-        color: #3a64be;
+        font-weight: 700;
+        color: #333;
     }
-    
 
-.menu-block {
-  display: flex;
-  flex-wrap: wrap; /* позволяет переносить пункты меню */
-  justify-content: flex-end; /* прижимает меню к правому краю */
-  gap: 1rem; /* отступы между элементами */
-  margin-top: 1rem; /* отступ от блока со статистикой */
-}
+    .order-status {
+        font-size: 0.825rem;
+        padding: 0.25rem 0.6rem;
+        border-radius: 20px;
+        background-color: #f0f0f0;
+        color: #666;
+    }
 
-.menu-block a {
-  padding: 0.5rem 1rem;
-  background-color: #f0f0f0;
-  border-radius: 4px;
-  text-decoration: none;
-  color: #333;
-  transition: background-color 0.3s;
-}
-
-.menu-block a:hover {
-  background-color: #e0e0e0;
-}
     /* Адаптивность */
     @media (max-width: 768px) {
         .header {
             flex-direction: column;
+            align-items: flex-start;
             gap: 1rem;
+        }
+        .btn-logout {
+            width: 100%;
             text-align: center;
         }
-
-        .avatar {
-            width: 120px;
-            height: 120px;
-        }
-
-        .card-body {
+        .profile-container {
             padding: 1rem;
-        }
-
-        .list-group-item {
-            padding: 0.75rem 1rem;
-        }
-    }
-
-    @media (max-width: 576px) {
-        .avatar {
-            width: 100px;
-            height: 100px;
-        }
-
-        .card-body {
-            padding: 0.75rem;
-        }
-        
-        .purchase-stats {
-            grid-template-columns: 1fr;
         }
     }
 </style>
@@ -252,112 +257,87 @@
                 {% endif %}
             </div>
 
-            <!-- Основные данные пользователя -->
+            {% comment %} <div class="form-group">
+    <label for="id_avatar">Аватар</label>
+    <input type="file" name="avatar" id="id_avatar" accept="image/*">
+</div>
+
+{% if user.avatar %}
+    <img src="{{ user.avatar.url }}" alt="Аватар" class="profile-avatar">
+{% else %}
+    <span class="default-avatar">Аватар по умолчанию</span>
+{% endif %} {% endcomment %}
+            <!-- Данные -->
             <h2 class="h4 mb-3">{{ user.username }}</h2>
             <p class="text-muted mb-2"><strong>Email:</strong> {{ user.email }}</p>
             <p class="text-muted"><strong>Дата регистрации:</strong> {{ user.date_joined|date:"d.m.Y" }}</p>
         </div>
-            </div>
-<!-- Правая колонка: сначала меню, потом статистика и заказы -->
-<div class="col-12 col-md-8">
-  <!-- Меню действий (новое расположение) -->
-
-<div class="d-flex flex-wrap gap-3 mb-4">
-  <a href="{% url 'accounts:edit_profile' %}" class="btn btn-outline-primary px-3 py-2">Редактировать профиль</a>
-  <a href="{% url 'accounts:change_password' %}" class="btn btn-outline-primary px-3 py-2">Сменить пароль</a>
-  <a href="{% url 'accounts:orders' %}" class="btn btn-outline-primary px-3 py-2">Мои заказы</a>
-  <a href="{% url 'accounts:wishlist' %}" class="btn btn-outline-primary px-3 py-2">Избранное</a>
-  <a href="{% url 'accounts:addresses' %}" class="btn btn-outline-primary px-3 py-2">Адреса доставки</a>
-  <a href="{% url 'accounts:payment_methods' %}" class="btn btn-outline-primary px-3 py-2">Способы оплаты</a>
-</div>
-  <!-- остальные блоки: заказы, рекомендации -->
-</div>
-    </div>
-</div>
-
-<!-- Правая колонка: статистика и история заказов -->
-<div class="col-12 col-md-8">
-    <!-- Статистика покупок -->
-    <div class="purchase-stats">
-        <div class="stat-card">
-            <span class="stat-number">{{ total_orders|default:0 }}</span>
-            <span class="stat-label">Всего заказов</span>
-        </div>
-        <div class="stat-card">
-            <span class="stat-number">₽{{ total_spent|floatformat:2|default:"0.00" }}</span>
-            <span class="stat-label">Потрачено всего</span>
-        </div>
-        <div class="stat-card">
-            <span class="stat-number">{{ favorite_count|default:0 }}</span>
-            <span class="stat-label">В избранном</span>
-        </div>
     </div>
 
-    <!-- Последние заказы -->
-    <div class="card border-0 shadow-sm">
-        <div class="card-header">
-            <h3 class="card-title">Последние заказы</h3>
+    <!-- Правая колонка: меню, статистика, заказы -->
+    <div class="col-12 col-md-8">
+        <!-- Меню действий -->
+        <div class="d-flex flex-wrap gap-3 mb-4">
+            <a href="{% url 'accounts:edit_profile' %}" class="btn btn-outline-primary">Редактировать профиль</a>
+            <a href="{% url 'accounts:change_password' %}" class="btn btn-outline-primary">Сменить пароль</a>
+            <a href="{% url 'accounts:orders' %}" class="btn btn-outline-primary">Мои заказы</a>
+            <a href="{% url 'accounts:user_favorites' %}" class="btn btn-outline-primary">Избранное</a>
+           
+            <a href="{% url 'accounts:profile_addresses' %}" class="btn btn-outline-primary">Адреса</a>
+            <a href="{% url 'accounts:payment_methods' %}" class="btn btn-outline-primary">Способы оплаты</a>
         </div>
-        <div class="card-body">
-            {% if orders %}
-                {% for order in orders|slice:":5" %}
-                <div class="order-item">
-                    <div class="order-header">
-                        <div>
-                            <strong>Заказ №{{ order.id }}</strong>
-                            <br>
-                            <small>{{ order.created_at|date:"d.m.Y H:i" }}</small>
-                        </div>
-                        <span class="order-status {% if order.status == 'delivered' %}status-delivered{% elif order.status == 'processing' %}status-processing{% else %}status-cancelled{% endif %}">
-                            {% if order.status == 'delivered' %}Доставлен{% elif order.status == 'processing' %}В обработке{% else %}Отменён{% endif %}
-                        </span>
-                    </div>
-                    <div class="mt-2">
-                <span class="order-total">₽{{ order.total_price|floatformat:2 }}</span>
-                <br>
-                <small>{{ order.items_count }} товаров</small>
-            </div>
-                </div>
-                {% endfor %}
-            {% else %}
-                <p class="text-muted">У вас пока нет заказов.</p>
-            {% endif %}
-        </div>
-    </div>
 
-    <!-- Рекомендуемые товары -->
-    <div class="card border-0 shadow-sm mt-4">
-        <div class="card-header">
-            <h3 class="card-title">Рекомендуем для вас</h3>
-        </div>
-        <div class="card-body">
-            <div class="row g-3">
-                {% for product in recommended_products %}
-                <div class="col-6 col-md-4 col-lg-3">
-                    <div class="card h-100">
-                <img src="{{ product.image.url }}" class="card-img-top" alt="{{ product.name }}" style="height: 150px; object-fit: cover;">
-                <div class="card-body p-2">
-                    <h6 class="card-title mb-1">{{ product.name|truncatechars:25 }}</h6>
-            <p class="card-text mb-1 text-muted">₽{{ product.price|floatformat:2 }}</p>
-            <a href="{% url 'shop:product_detail' product.id %}" class="btn btn-sm btn-outline-primary w-100">Подробнее</a>
-                </div>
-            </div>
-                </div>
-                {% empty %}
-                <div class="col-12">
-                    <p class="text-muted">Пока нет рекомендаций.</p>
-                </div>
-                {% endfor %}
+        <!-- Статистика -->
+
+<div class="stats">
+    <div class="stat-card">
+        <h3>{{ total_orders }}</h3>
+        <p>Всего заказов</p>
+    </div>
+    <div class="stat-card">
+        <h3>{{ favorite_count }}</h3>
+        <p>В избранном</p>
+    </div>
+    <div class="stat-card">
+       <h3>{{ total_spent|floatformat:2|default:0 }} ₽</h3> 
+        <p>Потрачено всего</p>
+    </div>
+</div>
+<div class="stat-card bg-light p-3 rounded border">
+    <h3 class="text-danger">
+        {{ average_discount_percent|floatformat:1 }}%
+    </h3>
+    <p class="mb-0 text-muted">Средняя скидка</p>
+</div>
+    <!-- Новый блок: Средний чек -->
+    <div class="stat-card">
+        <h3>{{ average_check|floatformat:2|default:0 }} ₽</h3>
+        <p>Средний чек</p>
+    </div>
+</div>
+{% if orders %}
+    <ul>
+        {% for order in orders %}
+
+<li>Заказ #{{ order.id }} от {{ order.created_at|date:"d.m.Y H:i" }} — {{ order.total_price|floatformat:2 }} ₽ 
+    <span style="color: gray; font-size: 0.8em;">({{ order.get_status_display }})</span>
+</li>
+        {% endfor %}
+    </ul>
+{% else %}
+    <p>У вас пока нет заказов.</p>
+{% endif %}
             </div>
         </div>
     </div>
 </div>
+
 <!-- Закрытие колонок -->
 </div> <!-- Закрытие контейнера row g-4 profile-container -->
 </div> <!-- Закрытие контейнера container my-5 -->
 
 
-{% endblock %} <!-- ЗАКРЫТИЕ БЛОКА content -->
+{% endblock %} <!-- ЗАКРЫТИЕ БЛОКА content --> 
 
 
 

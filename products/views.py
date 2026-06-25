@@ -1,22 +1,88 @@
 
-from django.shortcuts import render, redirect, get_object_or_404
-from django.views.decorators.http import require_POST
-from django.contrib.auth.decorators import login_required
-from products.forms import CartAddProductForm
-from products.models import Product, Category, Favorite, Cart # добавлен Favorite
-from cart.models import CartItem
-from cart.cart import Cart
-from cart.models import Cart 
-from django.core.paginator import Paginator
-from django.contrib import messages
-from django.db.models import Count, Q
-from django.db.models import Exists, OuterRef
-from django.http import JsonResponse
-from django.views.decorators.csrf import csrf_exempt
-from django.utils.decorators import method_decorator
-from products import views
+# from django.shortcuts import render, redirect, get_object_or_404
+# from django.views.decorators.http import require_POST
+# from django.contrib.auth.decorators import login_required
+# from products.forms import CartAddProductForm
+# from products.models import Product, Category, Favorite, Cart # добавлен Favorite
+# from cart.models import CartItem
+# from cart.cart import Cart
+# from cart.models import Cart 
+# from django.core.paginator import Paginator
+# from django.contrib import messages
+# from django.db.models import Count, Q
+# from django.db.models import Exists, OuterRef
+# from django.http import JsonResponse
+# from django.views.decorators.csrf import csrf_exempt
+# from django.utils.decorators import method_decorator
 
-from .models import Favorite
+# from django.contrib.auth.decorators import login_required
+# from django.views.decorators.http import require_http_methods
+# from accounts.models import Favorite  # <-- проверь имя модели (если не Favorite — подставь своё)
+
+from django.views.decorators.http import require_POST
+from django.views.decorators.csrf import csrf_exempt
+
+from accounts.models import Favorite
+from django.shortcuts import render, redirect, get_object_or_404
+from django.contrib.auth.decorators import login_required
+from django.views.decorators.http import require_http_methods
+from django.http import JsonResponse
+from .models import Product, Category
+from cart.cart import Cart  # Только логика корзины (сессия), без моделей
+from products.forms import CartAddProductForm
+from django.core.paginator import Paginator
+from django.db.models import Q
+from django.contrib import messages
+from django.views.decorators.csrf import csrf_protect
+from django.http import JsonResponse
+from django.views.decorators.http import require_http_methods
+from django.contrib.auth.decorators import login_required
+from .models import Product
+from accounts.models import Favorite
+
+def search_view(request):
+    query = request.GET.get('q', '')
+    products = Product.objects.none()
+    
+    if query:
+        products = Product.objects.filter(name__icontains=query)
+        
+    return render(request, 'products/search.html', {
+        'products': products,
+        'query': query
+    })
+    
+    
+    
+@login_required
+@require_http_methods(["POST"])
+def toggle_favorite(request):
+    product_id = request.POST.get('product_id')
+    if not product_id:
+        return JsonResponse({'success': False, 'error': 'Не указан product_id'}, status=400)
+
+    try:
+        product = Product.objects.get(pk=product_id)
+    except Product.DoesNotExist:
+        return JsonResponse({'success': False, 'error': 'Товар не найден'}, status=404)
+
+    favorite, created = Favorite.objects.get_or_create(user=request.user, product=product)
+
+    if not created:
+        # Если запись уже была — удаляем (переключаем «избранное»)
+        favorite.delete()
+        return JsonResponse({'success': True, 'action': 'removed'})
+
+    return JsonResponse({'success': True, 'action': 'added'})
+
+def get_context_data(self, **kwargs):
+    context = super().get_context_data(**kwargs)
+    if self.request.user.is_authenticated:
+        # Получаем ID всех товаров, которые уже в избранном у пользователя
+        fav_ids = Favorite.objects.filter(user=self.request.user).values_list('product_id', flat=True)
+        context['user_favorite_ids'] = list(fav_ids)
+    return context
+
 @require_POST
 @csrf_exempt
 @login_required  # если нужно только для авторизованных
@@ -61,236 +127,56 @@ def add_to_cart(request):
     except Exception as e:
         return JsonResponse({'success': False, 'message': str(e)})
 
-@login_required
-@csrf_exempt
-def toggle_favorite(request):
-    if request.method == 'POST':
-        product_id = request.POST.get('product_id')
-
-        try:
-            product = Product.objects.get(id=product_id)
-            favorite, created = Favorite.objects.get_or_create(
-                user=request.user,
-                product=product
-            )
-
-            if not created:
-                # Если уже в избранном — удаляем
-                favorite.delete()
-                return JsonResponse({
-                    'success': True,
-                    'is_favorite': False,
-                    'message': 'Товар удалён из избранного'
-                })
-            else:
-                return JsonResponse({
-                    'success': True,
-                    'is_favorite': True,
-                    'message': 'Товар добавлен в избранное'
-                })
-        except Product.DoesNotExist:
-            return JsonResponse({'success': False, 'message': 'Товар не найден'})
-
-    return JsonResponse({'success': False, 'message': 'Ошибка запроса'})
-
-# from django.shortcuts import render, redirect, get_object_or_404
-# from django.views.decorators.http import require_POST
-# from django.contrib.auth.decorators import login_required
-# from products.forms import CartAddProductForm
-# from products.models import Product, Category
-# from cart.models import CartItem
-# from cart.cart import Cart
-# from django.core.paginator import Paginator
-# from django.contrib import messages
-# from django.db.models import Count, Q
-# from django.db.models import Exists, OuterRef
-# from django.http import JsonResponse
-# from django.views.decorators.csrf import csrf_exempt
-# from django.utils.decorators import method_decorator
-# from cart.models import CartItem
-# from .models import Favorite, Product
-# from django.http import JsonResponse
-# from django.views.decorators.csrf import csrf_exempt
-# from django.utils.decorators import method_decorator
-# from django.contrib.auth.decorators import login_required
-
-
-# from .models import Product
-# @require_POST
-# @csrf_exempt
-# @login_required  # если нужно только для авторизованных
-# def add_to_cart(request):
-#     product_id = request.POST.get('product_id')
-#     quantity = int(request.POST.get('quantity', 1))
-
-#     try:
-#         product = Product.objects.get(id=product_id, is_active=True)
-#         if not product.available:
-#             return JsonResponse({
-#                 'success': False,
-#                 'message': f'Товар "{product.name}" временно недоступен'
-#             })
-
-#         # Логика добавления в корзину (для авторизованных и гостей)
-#         if request.user.is_authenticated:
-#             cart, created = Cart.objects.get_or_create(user=request.user)
-#             cart_item, created = CartItem.objects.get_or_create(
-#                 cart=cart,
-#                 product=product,
-#                 defaults={'quantity': quantity}
-#             )
-#             if not created:
-#                 cart_item.quantity += quantity
-#                 cart_item.save()
-#             cart_count = cart.items.count()
-#         else:
-#             # Для гостей — используйте сессионную корзину
-#             from cart.cart import Cart as SessionCart
-#             session_cart = SessionCart(request)
-#             session_cart.add(product=product, quantity=quantity)
-#             cart_count = len(session_cart)
-
-#         return JsonResponse({
-#             'success': True,
-#             'message': f'{product.name} добавлен в корзину!',
-#             'cart_count': cart_count
-#         })
-#     except Product.DoesNotExist:
-#         return JsonResponse({'success': False, 'message': 'Товар не найден'})
-#     except Exception as e:
-#         return JsonResponse({'success': False, 'message': str(e)})
-
-
-
-
-
-
-
-# @login_required
-# @csrf_exempt
-# def toggle_favorite(request):
-#     if request.method == 'POST':
-#         product_id = request.POST.get('product_id')
-
-#         try:
-#             product = Product.objects.get(id=product_id)
-#             favorite, created = Favorite.objects.get_or_create(
-#                 user=request.user,
-#                 product=product
-#             )
-
-#             if not created:
-#                 # Если уже в избранном — удаляем
-#                 favorite.delete()
-#                 return JsonResponse({
-#                     'success': True,
-#                     'is_favorite': False,
-#                     'message': 'Товар удалён из избранного'
-#                 })
-#             else:
-#                 return JsonResponse({
-#                     'success': True,
-#                     'is_favorite': True,
-#                     'message': 'Товар добавлен в избранное'
-#                 })
-#         except Product.DoesNotExist:
-#             return JsonResponse({'success': False, 'message': 'Товар не найден'})
-
-#     return JsonResponse({'success': False, 'message': 'Ошибка запроса'})
-
-# def home(request):
-#     popular_products = Product.objects.filter(is_popular=True, available=True)
-#     all_products = Product.objects.all()[:8]
-
-#     return render(request, 'products/home.html', {
-#     'popular_products': popular_products,
-#     'all_products': all_products
-# })
-
-# def home_page(request):
-#     categories = Category.objects.annotate(
-#         product_count=Count('products', filter=Q(products__is_active=True))
-#     ).order_by('name')
-#     popular_products = Product.objects.filter(is_active=True)[:8]
-#     latest_products = Product.objects.filter(is_active=True).order_by('-created_at')[:8]
-
-#     return render(request, 'products/home.html', {
-#         'categories': categories,
-#         'popular_products': popular_products,
-#         'latest_products': latest_products
-#     })
 
 def home_page(request):
-    categories = Category.objects.annotate(
-        product_count=Count('products', filter=Q(products__is_active=True))
-    ).order_by('name')
-    
-    # ИСПРАВЛЕНИЕ: Фильтруем по is_popular и is_active
-    popular_products = Product.objects.filter(is_popular=True, is_active=True)[:8]
-    
-    latest_products = Product.objects.filter(is_active=True).order_by('-created_at')[:8]
-
-    return render(request, 'products/home.html', {
-        'categories': categories,
-        'popular_products': popular_products,
-        'latest_products': latest_products
-    })
+    popular_products = Product.objects.filter(
+        is_active=True,
+        available=True,
+        is_popular=True
+    )[:8]
+    context = {'popular_products': popular_products}
+    return render(request, 'products/home.html', context)
 
 def product_list(request):
-    products = Product.objects.filter(is_active=True)
+    queryset = Product.objects.all()
 
-    # Добавляем аннотацию для избранного
-    if request.user.is_authenticated:
+    # Фильтр по категории
+    category_id = request.GET.get("category")
+    if category_id:
+        queryset = queryset.filter(category_id=category_id)
 
-        products = products.annotate(
-            is_favorite=Exists(
-                Favorite.objects.filter(
-                    user=request.user,
-            product=OuterRef('pk')
-        )
-    )
-)
-    paginator = Paginator(products, 8)
-    page_number = request.GET.get('page')
-    page_obj = paginator.get_page(page_number)
+    # Фильтр по цене (мин/макс)
+    min_price = request.GET.get("min_price")
+    max_price = request.GET.get("max_price")
 
-    # Для корзины — используем сессионный подход
-    cart = Cart(request)
-    cart_product_ids = [str(item['product'].id) for item in cart]
+    if min_price:
+        queryset = queryset.filter(price__gte=min_price)
+    if max_price:
+        queryset = queryset.filter(price__lte=max_price)
 
-    return render(request, 'products/product_list.html', {
-        'page_obj': page_obj,
-        'products': page_obj.object_list,
-        'cart_product_ids': cart_product_ids
-    })
-    
-# def product_detail(request, id, slug):
-#     product = get_object_or_404(Product, id=id, slug=slug)
-#     category = product.category  # получаем категорию товара
+    categories = Category.objects.all()
 
-
-#     cart_product_form = CartAddProductForm()
-
-#     return render(request, 'products/product_detail.html', {
-#         'product': product,
-#         'cart_product_form': cart_product_form,
-#         'category': category  # передаём категорию в шаблон
-#     })
+    context = {
+        "products": queryset,
+        "categories": categories,
+    }
+    return render(request, "products/catalog.html", context)
 
 def product_detail(request, slug):
-    product = get_object_or_404(Product, slug=slug)
-    category = product.category
-
-    cart_product_form = CartAddProductForm()
-
-    # Получаем словарь характеристик
-    specifications_dict = product.get_specifications_dict()
+    product = get_object_or_404(Product, slug=slug, is_active=True, available=True)
+    cart = Cart(request)
+    form = CartAddProductForm()
+    
+    is_favorite = False
+    if request.user.is_authenticated:
+        is_favorite = Favorite.objects.filter(user=request.user, product=product).exists()
 
     return render(request, 'products/product_detail.html', {
         'product': product,
-        'cart_product_form': cart_product_form,
-        'category': category,
-        'specifications_dict': specifications_dict  # передаём словарь в шаблон
+        'category': product.category,  # <-- Добавь эту строку
+        'form': form,
+        'cart': cart,
+        'is_favorite': is_favorite
     })
 
 
@@ -303,62 +189,42 @@ def product_detail_view(request, slug):
         # Добавьте сюда другие нужные переменные, если есть
     }
     return render(request, 'products/product_detail.html', context)
-#     cart_product_form = CartAddProductForm()
 
-#     return render(request, 'products/product_detail.html', {
-#         'product': product,
-#         'cart_product_form': cart_product_form,
-#         'category': category  # передаём категорию в шаблон
-#     })
-
-# def category_detail(request, slug):
-#     print(f"[DEBUG] Получен slug: '{slug}'")
-#     try:
-#         category = Category.objects.get(slug=slug, is_active=True)
-#         print(f"[DEBUG] Найдена категория: {category.name} (ID: {category.id})")
-#     except Category.DoesNotExist:
-#         print(f"[DEBUG] Категория с slug='{slug}' не найдена")
-#         raise
-#     products = Product.objects.filter(category=category, is_active=True)
-#     context = {'category': category, 'products': products}
-#     return render(request, 'products/category_detail.html', context)
-# ЕДИНСТВЕННАЯ ВЕРСИЯ category_detail — корректная
 def category_detail(request, slug):
-    # Получаем категорию по slug
-    category = get_object_or_404(Category, slug=slug)
+    category = get_object_or_404(Category, slug=slug, is_active=True)
+    products = category.products.filter(is_active=True, available=True)
+    # ... тут можно добавить пагинацию как в catalog_view ...
+    return render(request, 'products/category_detail.html', {'category': category, 'products': products})
 
-    # Фильтруем активные товары в этой категории
-    products = Product.objects.filter(
-        category=category,
-        is_active=True
-    ).select_related('category')  # оптимизируем запросы к БД
 
-    return render(request, 'products/category_detail.html', {
-        'category': category,
-        'products': products
-    })
-
-# def catalog(request):
-#     products = Product.objects.all()
-#     return render(request, 'products/catalog.html', {'products': products})
 def catalog(request):
     products = Product.objects.all()
     categories = Category.objects.all()
 
-    # Логика фильтрации (если нужна)
+    # Логика фильтрации (по категории, цене и т. д.)
+    category_id = request.GET.get('category')
     min_price = request.GET.get('min_price')
     max_price = request.GET.get('max_price')
 
+    if category_id:
+        products = products.filter(category_id=category_id)
     if min_price:
         products = products.filter(price__gte=min_price)
     if max_price:
         products = products.filter(price__lte=max_price)
+
+    # Добавляем флаг is_favorite для каждого товара
+    if request.user.is_authenticated:
+        favorite_ids = Favorite.objects.filter(user=request.user).values_list('product_id', flat=True)
+        for product in products:
+            product.is_favorite = product.id in favorite_ids
 
     context = {
         'products': products,
         'categories': categories,
     }
     return render(request, 'products/catalog.html', context)
+
 def search(request):
     query = request.GET.get('q', '')
     products = Product.objects.none()
@@ -370,29 +236,34 @@ def search(request):
         'products': products,
         'query': query
     })
-@csrf_exempt
-@login_required
 @require_POST
-def cart_add(request, product_id):
-    """Добавление товара в корзину (работает для гостей и авторизованных)"""
+@csrf_protect
+def add_to_cart(request):
+    product_id = request.POST.get('product_id')
+    quantity = int(request.POST.get('quantity', 1))
+    if quantity < 1:
+        quantity = 1
+
+    try:
+        product = Product.objects.get(id=product_id, is_active=True, available=True)
+    except Product.DoesNotExist:
+        return JsonResponse({'success': False, 'message': 'Товар не найден'}, status=404)
+
     cart = Cart(request)
-    product = get_object_or_404(Product, id=product_id)
+    cart.add(product=product, quantity=quantity, update_quantity=False)
 
-    form = CartAddProductForm(request.POST)
-    if form.is_valid():
-        cd = form.cleaned_data
-        quantity = cd['quantity']
+    referer = request.META.get('HTTP_REFERER')
+    if referer:
+        # Если это AJAX-запрос — верни JSON, иначе редирект
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return JsonResponse({
+                'success': True,
+                'message': f'{product.name} добавлен в корзину!',
+                'cart_count': len(cart)
+            })
+        return redirect(referer)
 
-        # Проверка доступности товара
-        if not product.available:
-            messages.error(request, f'Товар "{product.name}" временно недоступен')
-            return redirect('products:product_list')
-        # Добавление в корзину
-        cart.add(product=product, quantity=quantity, update_quantity=cd['update'])
-        messages.success(request, f'Товар "{product.name}" добавлен в корзину')
-    else:
-        messages.error(request, 'Некорректные данные. Проверьте количество товара.')
-    return redirect('cart:cart_detail')
+    return redirect('products:catalog')
 
 
 @login_required
@@ -427,39 +298,36 @@ def about(request):
     return render(request, 'products/about.html')
 
 def catalog_view(request):
-    products = Product.objects.all()
-    categories = Category.objects.all()
+    products = Product.objects.filter(is_active=True, available=True)
     
-    # 1. ФИЛЬТРАЦИЯ ПО ЦЕНЕ
+    # Фильтры
+    category_id = request.GET.get('category')
     min_price = request.GET.get('min_price')
     max_price = request.GET.get('max_price')
-    
+
+    if category_id:
+        products = products.filter(category_id=category_id)
     if min_price:
         products = products.filter(price__gte=min_price)
     if max_price:
         products = products.filter(price__lte=max_price)
 
-    # 2. ФИЛЬТРАЦИЯ ПО КАТЕГОРИИ
-    category_id = request.GET.get('category')
-    if category_id:
-        products = products.filter(category_id=category_id)
+    # Пагинация
+    paginator = Paginator(products, 9)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
 
-    # 3. ПАГИНАЦИЯ (если используете Paginator)
-    # from django.core.paginator import Paginator
-    # paginator = Paginator(products, 9)
-    # page_number = request.GET.get('page')
-    # products = paginator.get_page(page_number)
-
-    # 4. СПИСОК ИЗБРАННЫХ (КРИТИЧНО ВАЖНО)
+    # Проверка избранного для отображения сердечек сразу при загрузке
+    fav_ids = set()
     if request.user.is_authenticated:
-        # Получаем ID товаров, которые пользователь добавил в избранное
-        favorites = request.user.favorites.all().values_list('id', flat=True)
-    else:
-        favorites = []
+        fav_ids = set(Favorite.objects.filter(user=request.user).values_list('product_id', flat=True))
+    
+    for product in page_obj:
+        product.is_favorite = product.id in fav_ids
 
     context = {
-        'products': products,
-        'categories': categories,
-        'favorites': favorites,  # <--- ЭТА ПЕРЕМЕННАЯ НУЖНА ДЛЯ СЕРДЕЧКА
+        'products': page_obj,
+        'categories': Category.objects.filter(is_active=True),
+        'filters': request.GET
     }
     return render(request, 'products/catalog.html', context)

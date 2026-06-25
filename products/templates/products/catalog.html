@@ -1,262 +1,312 @@
 {% extends "base.html" %}
+{% load static %}
+{% load category_tags %}
+{% load cache %}
 
 {% block content %}
-  {% load static %}
-  {% load category_tags %}
-  {% load cache %}
-<!DOCTYPE html>
-<html lang="ru">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Каталог товаров</title>
+  <!-- Подключение иконок Bootstrap (ОБЯЗАТЕЛЬНО для сердечек) -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
 
-
-    <!-- Bootstrap CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-
-    <!-- Подключаем свой CSS -->
-    <link rel="stylesheet" href="{% static 'css/style.css' %}">
-
-    <!-- Иконки Bootstrap -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
-
-
-    <!-- Дополнительные стили для карточек -->
-    <style>
-        .card {
-            transition: transform 0.3s, box-shadow 0.3s;
-            border-radius: 12px;
-            overflow: hidden;
-            border: none;
-        }
-        .card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
-        }
-        .card-img-top {
-            object-fit: cover;
-            height: 200px;
-            border-top-left-radius: 12px;
-            border-top-right-radius: 12px;
-        }
-        .card-title {
-            font-weight: 600;
-            color: #333;
-        }
-        .card-text {
-            color: #666;
-            margin-bottom: 1rem;
-        }
-        .btn-primary {
-            background-color: #0d6efd;
-            border-color: #0d6efd;
-        }
-        .btn-primary:hover {
-            background-color: #0a58ca;
-            border-color: #0a58ca;
-        }
-        .favorite-btn.active {
-            color: #e74c3c;
-            font-weight: bold;
-        }
-        .price-badge {
-            background: #0d6efd;
-            color: white;
-            padding: 0.25rem 0.5rem;
-            border-radius: 10px;
-            font-size: 0.9rem;
-        }
-    </style>
-</head>
-<body>
-
-
-    <div class="container my-4">
-        <h1 class="mb-4 text-center">Каталог товаров</h1>
-
-        <!-- Отображение сообщений Django -->
-        {% if messages %}
-            <div class="alert alert-success alert-dismissible fade show" role="alert">
-                {% for message in messages %}
-                    {{ message }}
-                {% endfor %}
-                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-            </div>
-        {% endif %}
-
-
-                        <!-- Здесь будут варианты категорий -->
-                                        <!-- Блок категорий -->
-
-          
-                            
-      <!-- Фильтры -->
-              
-
-      <div class="row mb-4">
-        <div class="col-12">
-          <div class="card">
-            <div class="card-body">
-              <h5 class="card-title">Фильтры</h5>
-              <form method="get">
-                <div class="row g-3">
-                  <div class="col-md-3">
-
-                    <select class="form-select" name="category">
-                        
-{% for category in categories %}
-              
-                <option value="{{ category.id }}"
-                  {% if request.GET.category == category.id|stringformat:"s" %}selected{% endif %}>
-                  {{ category.name }}
-                </option>
-              {% endfor %}
-            </select>
-          </div>
-          <div class="col-md-3">
-            <input type="number" class="form-control" name="min_price" placeholder="Мин. цена">
-          </div>
-          <div class="col-md-3">
-            <input type="number" class="form-control" name="max_price" placeholder="Макс. цена">
-          </div>
-          <div class="col-md-3">
-            {% csrf_token %}       
-            <button type="submit" class="btn btn-primary w-100">Применить</button>
-          </div>
-        </div>
-      </form>
-    </div>
-  </div>
-</div>
-
-        {% if products %}
-            <div class="row g-4">
-                {% for product in products %}
-                    <div class="col-md-4 col-lg-3">
-                <div class="card h-100 position-relative">
-                    <!-- Значок избранного -->
-            <button class="btn favorite-btn position-absolute top-0 end-0 m-2"
-                data-product-id="{{ product.id }}"
-                title="Добавить в избранное">
-                <i class="bi bi-heart{% if product in user.favorites %}-fill{% endif %}"></i>
-            </button>
-
-            {% if product.image %}
-                <img src="{{ product.image.url }}" class="card-img-top" alt="{{ product.name }}" loading="lazy">
-            {% else %}
-                <div class="card-img-top bg-light d-flex align-items-center justify-content-center" style="height: 200px;">
-            <span class="text-muted">Нет изображения</span>
-                </div>
-            {% endif %}
-            <div class="card-body d-flex flex-column">
-                <h5 class="card-title">{{ product.name }}</h5>
-                <p class="card-text">{{ product.description|truncatewords:10 }}</p>
-                <div class="mt-auto">
-            <!-- Цена с возможностью скидки -->
-            {% if product.discount_percent %}
-                <div>
-                    <span class="price-badge">-{{ product.discount_percent }}%</span>
-                    <span class="text-decoration-line-through text-muted me-2">{{ product.original_price }} ₽</span>
-                    <span class="h5 fw-bold text-primary">{{ product.price }} ₽</span>
-                </div>
-            {% else %}
-                <span class="h5 fw-bold text-primary">{{ product.price }} ₽</span>
-           
-{% endif %}
-
-
-                 <!-- Форма добавления в корзину -->
-                <form action="{% url 'cart:add' product.id %}" method="post" class="mt-3">
-                    {% csrf_token %}
-                    <div class="row mb-3">
-                <div class="col-6">
-                    {{ cart_product_form.quantity.label_tag }}
-            {{ cart_product_form.quantity }}
-        </div>
-    </div>
-                <button class="btn btn-outline-success mt-2 w-100"
-                data-product-slug="{{product.slug }}"> Подробнее
-                
-            </button>
- 
-   
-</form>    
-
-
-           <button class="btn favorite-btn position-absolute top-0 end-0 m-2 {% if product.is_favorite %}active{% endif %}"
-    data-product-id="{{ product.id }}"
-    title="Добавить в избранное">
-    <i class="bi {% if product.is_favorite %}bi-heart-fill{% else %}bi-heart{% endif %}"></i>
-</button>     </div>
-            </div>
-            </div>
-        </div>
-                {% endfor %}
-            </div>
-
-            <!-- Пагинация (если товаров много) -->
-            {% if products.has_other_pages %}
-                <nav aria-label="Page navigation" class="mt-4">
-                    <ul class="pagination justify-content-center">
-                {% if products.has_previous %}
-                    <li class="page-item">
-                <a class="page-link" href="?page={{ products.previous_page_number }}">Назад</a>
-            </li>
-        {% endif %}
-        <li class="page-item active">
-            <span class="page-link">{{ products.number }}</span>
-        </li>
-        {% if products.has_next %}
-            <li class="page-item">
-                <a class="page-link" href="?page={{ products.next_page_number }}">Вперед</a>
-            </li>
-        {% endif %}
-            </ul>
-                </nav>
-            {% endif %}
-        {% else %}
-            <div class="text-center py-5">
-                <i class="bi bi-box-seam fs-1 text-muted"></i>
-                <h4 class="mt-3 text-muted">Товары не найдены</h4>
-                <p>Попробуйте изменить фильтры или зайти позже.</p>
-                <button class="btn btn-primary" onclick="window.location.reload()">Сбросить фильтры</button>
-            </div>
-        {% endif %}
-    </div>
-
-
-{% endblock %}
-<!-- Bootstrap JS -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-
-
-<input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}">
-<!-- JS для работы избранного и корзины -->
-
-    <script>
-
-document.addEventListener('DOMContentLoaded', function() {
-    // Пример: открываем меню по клику на кнопку с классом .hamburger
-    const hamburger = document.querySelector('.hamburger');
-    const navbarNav = document.querySelector('.navbar-nav');
-
-    if (hamburger && navbarNav) {
-        hamburger.addEventListener('click', function() {
-            navbarNav.classList.toggle('show'); // добавляем/убираем класс show
-        });
+  <style>
+    .card {
+      transition: transform 0.3s, box-shadow 0.3s;
+      border-radius: 12px;
+      overflow: hidden;
+      border: none;
+      height: 100%; /* Чтобы все карточки в ряду были одной высоты */
+    }
+    .card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 10px 20px rgba(0, 0, 0, 0.15);
+    }
+    .card-img-top {
+      object-fit: cover;
+      height: 200px;
+    }
+    .price-badge {
+      background: #0d6efd;
+      color: white;
+      padding: 0.25rem 0.5rem;
+      border-radius: 10px;
+      font-size: 0.9rem;
+    }
+    .site-footer {
+      width: 100%;
+      background-color: #000;
+      color: #fff;
+      padding: 40px 0 20px;
+      margin-top: auto;
+      text-align: center;
+    }
+    /* Защита от схлопывания контейнера, если товаров нет */
+    .products-container {
+      min-height: 300px;
     }
 
-    // Логика для выпадающих списков (если есть элементы с классом .dropdown-toggle)
-    const dropdownToggles = document.querySelectorAll('.dropdown-toggle');
-    dropdownToggles.forEach(toggle => {
-        toggle.addEventListener('click', function(e) {
-            e.preventDefault();
-            this.nextElementSibling.classList.toggle('show');
-        });
+    .toggle-favorite-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 5px;
+    border-radius: 50%;
+    transition: transform 0.2s, background 0.2s;
+}
+
+.toggle-favorite-btn:hover {
+    background-color: rgba(255, 0, 0, 0.1);
+    transform: scale(1.1);
+}
+
+.toggle-favorite-btn svg {
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2;
+    transition: all 0.3s ease;
+}
+
+/* Состояние "активно" (добавляется через JS) */
+.toggle-favorite-btn.active svg {
+    fill: red;
+    stroke: red;
+}
+  </style>
+
+  <!-- Основной контент внутри контейнера (ограниченная ширина) -->
+  <div class="container my-4">
+    <h1 class="mb-4 text-center">Каталог товаров</h1>
+
+    {% if messages %}
+      <div class="alert alert-success alert-dismissible fade show" role="alert">
+        {% for message in messages %}
+          {{ message }}
+        {% endfor %}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+      </div>
+    {% endif %}
+
+    <!-- Фильтры -->
+    <div class="row mb-4">
+      <div class="col-12">
+        <div class="card">
+          <div class="card-body">
+            <h5 class="card-title">Фильтры</h5>
+
+
+                
+<form method="get">
+  <div class="row g-3 align-items-end">
+    <div class="col-md-3">
+      <label class="form-label small">Категория</label>
+      <select class="form-select" name="category">
+        <option value="">Все категории</option>
+        {% for category in categories %}
+          <option value="{{ category.id }}" {% if request.GET.category == category.id|stringformat:"s" %}selected{% endif %}>
+            {{ category.name }}
+          </option>
+        {% endfor %}
+      </select>
+    </div>
+    
+    <div class="col-md-3">
+      <label class="form-label small">Мин. цена</label>
+      <input type="number" class="form-control" name="min_price" placeholder="0" value="{{ request.GET.min_price }}">
+    </div>
+    
+    <div class="col-md-3">
+      <label class="form-label small">Макс. цена</label>
+      <input type="number" class="form-control" name="max_price" placeholder="999999" value="{{ request.GET.max_price }}">
+    </div>
+    
+          <div class="col-md-3">
+      <button type="submit" class="btn btn-primary w-100">Применить</button>
+      </div>
+      <!-- Кнопка сброса: теперь она сработает, если в urls.py стоит name="catalog" -->
+      <a href="{% url 'products:catalog' %}" class="btn btn-outline-secondary w-100 mt-2">Сбросить</a>
+
+
+    
+  </div>
+</form>
+
+
+    <!-- Основной блок товаров с проверкой на наличие -->
+    <div class="products-container">
+      {% if products %}
+        <div class="row g-4">
+          {% for product in products %}
+            <div class="col-md-6 col-lg-4 col-xl-3">
+              <div class="card h-100 position-relative">
+                
+                <!-- КНОПКА ИЗБРАННОГО -->
+<button 
+    type="button" 
+    class="btn favorite-btn" 
+    data-product-id="{{ product.id|default:0 }}" 
+    onclick="toggleFavorite(this)"
+>
+    <i class="bi bi-heart"></i>
+</button>
+<!-- Кнопка "В избранное" -->
+{% comment %} <button type="button" 
+        class="toggle-favorite-btn btn btn-sm" 
+        data-product-id="{{ product.id }}"
+        data-is-favorite="{% if product.is_favorite %}true{% else %}false{% endif %}">
+    <!-- SVG иконка сердца (можно заменить на свою картинку или эмодзи) -->
+    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+    </svg>
+</button> {% endcomment %}
+
+                {% if product.image %}
+                  <img src="{{ product.image.url }}" class="card-img-top" alt="{{ product.name }}" loading="lazy">
+                {% else %}
+                  <div class="card-img-top bg-light d-flex align-items-center justify-content-center" style="height: 200px;">
+                    <span class="text-muted">Нет фото</span>
+                  </div>
+                {% endif %}
+
+                <div class="card-body d-flex flex-column">
+                  <h5 class="card-title">{{ product.name }}</h5>
+                  <p class="card-text flex-grow-1">{{ product.description|truncatewords:12 }}</p>
+
+                  <div class="mt-auto">
+                    <!-- Цена -->
+                    {% if product.discount_percent %}
+                      <div class="d-flex align-items-baseline mb-2">
+                        <span class="price-badge">-{{ product.discount_percent }}%</span>
+                        <span class="text-decoration-line-through text-muted me-2 ms-2">{{ product.original_price }} ₽</span>
+                        <span class="h5 fw-bold text-primary">{{ product.price }} ₽</span>
+                      </div>
+                    {% else %}
+                      <span class="h5 fw-bold text-primary">{{ product.price }} ₽</span>
+                    {% endif %}
+
+                    <!-- Форма корзины -->
+
+                <form action="{% url 'cart:add' product.id %}" method="post" class="mt-3">
+                      {% csrf_token %}
+                      <button type="submit" class="btn btn-outline-success w-100">
+                        <i class="fas fa-cart-plus me-2"></i> В корзину
+                      </button>
+                    </form>  
+
+                    <!-- Кнопка Подробнее -->
+                    <a href="{% url 'products:product_detail' product.slug %}" class="btn btn-outline-primary w-100 mt-2">
+                      Подробнее
+                    </a>
+                  </div>
+                </div>
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+
+        <!-- Пагинация (только если товаров больше одной страницы) -->
+        {% if products.has_other_pages %}
+          <nav aria-label="Page navigation" class="mt-5">
+            <ul class="pagination justify-content-center">
+              {% if products.has_previous %}
+                <li class="page-item">
+                  <a class="page-link" href="?page={{ products.previous_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">Назад</a>
+                </li>
+              {% endif %}
+              
+              <li class="page-item active">
+                <span class="page-link">Страница {{ products.number }} из {{ products.paginator.num_pages }}</span>
+              </li>
+
+              {% if products.has_next %}
+                <li class="page-item">
+                  <a class="page-link" href="?page={{ products.next_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">Вперед</a>
+                </li>
+              {% endif %}
+            </ul>
+          </nav>
+        {% endif %}
+
+      {% else %}
+        <!-- Блок "Товары не найдены" -->
+        <div class="text-center py-5">
+          <i class="bi bi-box-seam fs-1 text-muted opacity-50"></i>
+          <h4 class="mt-3 text-muted">Товары не найдены</h4>
+          <p class="text-muted">По вашим фильтрам ничего не найдено. Попробуйте сбросить фильтры или выбрать другую категорию.</p>
+          <a href="{% url 'products:catalog' %}" class="btn btn-primary">Сбросить фильтры</a>
+        </div>
+      {% endif %}
+    </div>
+  </div>
+  <!-- Конец контейнера контента -->
+
+  <!-- Подключаем Bootstrap JS только один раз в конце -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+<script>
+
+function toggleFavorite(btnElement) {
+    // 1. Получаем ID из data-атрибута, который мы задали в HTML
+    const productId = btnElement.dataset.productId;
+
+    // 2. Проверка: если ID нет, выходим
+    if (!productId) {
+        console.error('Ошибка: Не найден ID товара в кнопке.');
+        alert('Ошибка: Не удалось определить товар.');
+        return;
+    }
+
+    // 3. Получаем CSRF токен
+    const csrfToken = document.getElementById('global-csrf-token')?.value;
+    if (!csrfToken) {
+        console.error('Ошибка: Не найден CSRF токен. Проверьте base.html');
+        return;
+    }
+
+    // 4. Формируем ПРАВИЛЬНЫЙ URL. 
+    // Раньше у тебя было что-то вроде `/favorites/\${productId}/`, что ломалось.
+    const url = `/accounts/favorites/${productId}/toggle/`;
+
+    fetch(url, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': csrfToken,
+        },
+        body: JSON.stringify({}),
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error(`Ошибка сервера: ${response.status}`);
+        }
+        return response.json();
+    })
+    .then(data => {
+        console.log('Успех:', data);
+        
+        // Логика переключения иконки
+        const icon = btnElement.querySelector('i');
+        if (icon) {
+            if (data.action === 'added') {
+                icon.classList.remove('bi-heart');
+                icon.classList.add('bi-heart-fill');
+                icon.style.color = '#dc3545'; // Красный
+            } else {
+                icon.classList.remove('bi-heart-fill');
+                icon.classList.add('bi-heart');
+                icon.style.color = ''; // Сброс цвета
+            }
+        }
+
+        // Логика обновления счетчика в шапке (если есть элемент с id wishlist-count)
+        const countEl = document.getElementById('wishlist-count');
+        if (countEl && data.count !== undefined) {
+            countEl.textContent = data.count;
+        }
+    })
+    .catch(error => {
+        console.error('Ошибка запроса:', error);
+        alert('Не удалось изменить избранное. Проверьте консоль браузера (F12).');
     });
-});
+}
+</script>
 
-  </script>  
-
-
+{% endblock %}
