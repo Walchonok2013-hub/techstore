@@ -2,54 +2,99 @@ from django.db import models
 from django.conf import settings
 from products.models import Product
 
+
+
+
 class Order(models.Model):
+    # Важно: related_name позволяет обращаться к заказам через user.user_orders
     user = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
-        on_delete=models.SET_NULL,
-        null=True,
+        settings.AUTH_USER_MODEL, 
+        on_delete=models.SET_NULL, 
+        null=True, 
         blank=True,
-        related_name='user_orders'
+        related_name='user_orders' 
     )
-    status = models.CharField(
-        max_length=20,
-        choices=[
-            ('new', 'Новый'),
-            ('paid', 'Оплачен'),
-            ('shipped', 'Отправлен'),
-            ('completed', 'Завершён'),
-        ],
-        default='new'
-    )
-    total_price = models.DecimalField(max_digits=10, decimal_places=2, default=0)
-    shipping_address = models.TextField(blank=True, null=True)
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-    original_price = models.DecimalField(max_digits=10, decimal_places=2, default=0) # Полная цена
-    discount_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0) # Сумма скидки
+    
+    # Поля для формы
+    first_name = models.CharField('Имя', max_length=50, default='')
+    last_name = models.CharField('Фамилия', max_length=50, default='')
+    email = models.EmailField('Email', default='')       # <-- Добавил default
+    phone = models.CharField('Телефон', max_length=20, default='') # <-- Добавил default
+    
+    # Адрес - теперь это просто строка, без сложных связей
+    address = models.CharField('Адрес доставки', max_length=250, default='') 
+    
+    notes = models.TextField('Примечания к заказу', blank=True, null=True)
+    
+    created_at = models.DateTimeField('Создан', auto_now_add=True)
+    total_price = models.DecimalField('Итого', max_digits=10, decimal_places=2, default=0)
+    status = models.CharField('Статус', max_length=20, default='new')
+    discount = models.DecimalField(max_digits=10, decimal_places=2, default=0) 
     class Meta:
-        ordering = ['-created_at']
+        ordering = ('-created_at',)
         verbose_name = 'Заказ'
         verbose_name_plural = 'Заказы'
 
     def __str__(self):
-        return f'Заказ #{self.id} от {self.created_at.date()}'
+        return f'Заказ {self.id}'
 
 
 class OrderItem(models.Model):
     order = models.ForeignKey(Order, related_name='items', on_delete=models.CASCADE)
-    product = models.ForeignKey(Product, on_delete=models.PROTECT, verbose_name='Товар')
+    product = models.ForeignKey(Product, on_delete=models.CASCADE)
     price = models.DecimalField('Цена', max_digits=10, decimal_places=2)
     quantity = models.PositiveIntegerField('Количество', default=1)
 
-    def get_cost(self):
-        return self.price * self.quantity
-
     def __str__(self):
         return f'{self.quantity} x {self.product.name}'
+# class Order(models.Model):
+#     user = models.ForeignKey(
+#         settings.AUTH_USER_MODEL,
+#         on_delete=models.SET_NULL,
+#         null=True,
+#         blank=True,
+#         related_name='user_orders'
+#     )
+#     status = models.CharField(
+#         max_length=20,
+#         choices=[
+#             ('new', 'Новый'),
+#             ('paid', 'Оплачен'),
+#             ('shipped', 'Отправлен'),
+#             ('completed', 'Завершён'),
+#         ],
+#         default='new'
+#     )
+#     total_price = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+#     shipping_address = models.TextField(blank=True, null=True)
+#     created_at = models.DateTimeField(auto_now_add=True)
+#     updated_at = models.DateTimeField(auto_now=True)
+#     original_price = models.DecimalField(max_digits=10, decimal_places=2, default=0) # Полная цена
+#     discount_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0) # Сумма скидки
+#     class Meta:
+#         ordering = ['-created_at']
+#         verbose_name = 'Заказ'
+#         verbose_name_plural = 'Заказы'
 
-    class Meta:
-        verbose_name = 'Элемент заказа'
-        verbose_name_plural = 'Элементы заказа'
+#     def __str__(self):
+#         return f'Заказ #{self.id} от {self.created_at.date()}'
+
+
+# class OrderItem(models.Model):
+#     order = models.ForeignKey(Order, related_name='items', on_delete=models.CASCADE)
+#     product = models.ForeignKey(Product, on_delete=models.PROTECT, verbose_name='Товар')
+#     price = models.DecimalField('Цена', max_digits=10, decimal_places=2)
+#     quantity = models.PositiveIntegerField('Количество', default=1)
+
+#     def get_cost(self):
+#         return self.price * self.quantity
+
+#     def __str__(self):
+#         return f'{self.quantity} x {self.product.name}'
+
+#     class Meta:
+#         verbose_name = 'Элемент заказа'
+#         verbose_name_plural = 'Элементы заказа'
 
 
 class Payment(models.Model):

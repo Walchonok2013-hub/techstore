@@ -14,11 +14,13 @@ from django.views.decorators.http import require_POST
 from django.http import JsonResponse
 from django.core.paginator import Paginator
 from django.db.models import Sum
-from .models import Address
+from .models import Address 
 from django.views.decorators.http import require_http_methods
 from .models import Favorite
 from products.models import Product
-
+from django.db.models import Sum, Avg, Count
+from .models import PaymentMethod
+from .forms import AddCardForm
 @login_required
 def toggle_favorite_ajax(request, product_id):
     # 1. Находим товар (если нет - вернет 404)
@@ -102,38 +104,52 @@ def edit_address(request, address_id):
 
     # Если метод GET — показываем форму редактирования
     return render(request, 'accounts/edit_address.html', {'address': address})
+
+
 @login_required
 def profile_addresses(request):
-    addresses = Address.objects.filter(user=request.user)
+    # Берём только адреса текущего пользователя
+    addresses = request.user.addresses.all()
     return render(request, 'accounts/addresses.html', {'addresses': addresses})
+@login_required
+def delete_address(request, pk):
+    # Находим адрес, проверяя, что он принадлежит текущему пользователю
+    address = get_object_or_404(Address, pk=pk, user=request.user)
 
+    # Если это основной адрес — запрещаем удаление
+    if address.is_default:
+        messages.error(request, 'Нельзя удалить основной адрес доставки!')
+        return redirect('accounts:profile_addresses')
+
+    # Если не основной — удаляем
+    address.delete()
+    messages.success(request, 'Адрес успешно удалён.')
+    
+    return redirect('accounts:profile_addresses')
 @login_required
 def create_address(request):
     if request.method == 'POST':
-        title = request.POST.get('title', 'Адрес доставки')
-        full_address = request.POST.get('full_address')
-        phone = request.POST.get('phone')
+        title = request.POST.get('title', '')
+        full_address = request.POST.get('full_address', '')
+        phone = request.POST.get('phone', '')
         notes = request.POST.get('notes', '')
-        is_default_raw = request.POST.get('is_default')
-        is_default = (is_default_raw == 'on')
+        is_default = request.POST.get('is_default') == 'on'  # checkbox приходит как 'on' или отсутствует
 
-        if is_default:
-            Address.objects.filter(user=request.user).update(is_default=False)
-        elif not Address.objects.filter(user=request.user).exists():
+        # Если это первый адрес пользователя, можно сразу сделать его основным
+        if not request.user.addresses.exists():
             is_default = True
 
-        Address.objects.create(
+        address = Address.objects.create(
             user=request.user,
             title=title,
             full_address=full_address,
             phone=phone,
             notes=notes,
-            is_default=is_default,
+            is_default=is_default
         )
+        return redirect('accounts:profile_addresses')
 
-        return redirect('accounts:profile_addresses')  # важно: с пространством имён
-
-    return redirect('accounts:profile_addresses')
+    return render(request, 'accounts/create_address.html')
 @login_required
 def user_favorites(request):
     # Получаем избранные товары пользователя с предварительной загрузкой связанных товаров
@@ -164,13 +180,24 @@ def add_card(request):
 
 @login_required
 def delete_card(request, pk):
-    # Проверяем, что карта принадлежит текущему пользователю
-    card = get_object_or_404(PaymentMethod, pk=pk, user=request.user)
-    if request.method == 'POST':
-        card.delete()
+    # Сначала проверяем метод
+    if request.method != 'POST':
         return redirect('cards_list')
-    # Если зашли не через POST (например, по прямой ссылке), просто возвращаем в список
+
+    # Только потом ищем и удаляем
+    card = get_object_or_404(PaymentMethod, pk=pk, user=request.user)
+    card.delete()
+    
     return redirect('cards_list')
+# @login_required
+# def delete_card(request, pk):
+#     # Проверяем, что карта принадлежит текущему пользователю
+#     card = get_object_or_404(PaymentMethod, pk=pk, user=request.user)
+#     if request.method == 'POST':
+#         card.delete()
+#         return redirect('cards_list')
+#     # Если зашли не через POST (например, по прямой ссылке), просто возвращаем в список
+#     return redirect('cards_list')
 
 
 @login_required
@@ -243,24 +270,32 @@ def payment_methods_add(request):
 
 @login_required
 def profile_view(request):
-    # Считаем статистику
-    total_orders = request.user.user_orders.count()
-    
-    # Безопасный подсчёт суммы
-    total_spent_result = request.user.user_orders.aggregate(Sum('total_price'))
-    total_spent = total_spent_result['total_price__sum'] or 0
-    
-    favorite_count = request.user.user_favorites.count()
-
-    # Последние заказы (не более 5)
-    orders = request.user.user_orders.order_by('-created_at')[:5]
-
-
-    # Агрегируем суммы скидок и исходные суммы
     stats = request.user.user_orders.aggregate(
-        total_discount=Sum('discount_amount'),
-        total_original=Sum('original_price')
+        total_spent=Sum('total_price'),
+        average_order=Avg('total_price'),
+        orders_count=Count('id'),
+        total_discount=Sum('discount')  # <--- ДОБАВЬ ЭТУ СТРОКУ (имя поля должно совпадать с моделью)
     )
+    
+    # Теперь этот код сработает безопасно
+    total_spent = stats['total_spent'] or 0
+    average_order = stats['average_order'] or 0
+    orders_count = stats['orders_count'] or 0
+    total_discount = stats['total_discount'] or 0  # <--- Теперь ключ существует
+
+    context = {
+        'total_spent': total_spent,
+        'average_order': average_order,
+        'orders_count': orders_count,
+        'total_discount': total_discount,  # <--- Передаем в шаблон
+    }
+    return render(request, 'accounts/profile.html', context)
+
+    # # Агрегируем суммы скидок и исходные суммы
+    # stats = request.user.user_orders.aggregate(
+    #     total_discount=Sum('discount_amount'),
+    #     total_original=Sum('original_price')
+    # )
 
     total_discount = stats['total_discount'] or 0
     total_original = stats['total_original'] or 0

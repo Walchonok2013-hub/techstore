@@ -19,7 +19,7 @@ def order_create(request):
     
     if len(cart) == 0:  # проверяем количество товаров в корзине
         messages.error(request, "Ваша корзина пуста.")
-        return redirect('cart:detail')
+        return redirect('cart:cart_detail')
 
     if request.method == 'POST':
         form = OrderCreateForm(request.POST)
