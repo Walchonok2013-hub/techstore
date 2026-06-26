@@ -150,16 +150,30 @@ def create_address(request):
         return redirect('accounts:profile_addresses')
 
     return render(request, 'accounts/create_address.html')
+#@login_required
+# def user_favorites(request):
+#     # Получаем избранные товары пользователя с предварительной загрузкой связанных товаров
+#     favorites = Favorite.objects.filter(user=request.user).select_related('product')
+#     context = {
+#         'favorites': favorites,
+#         'title': 'Мои избранные товары'
+#     }
+#     return render(request, 'accounts/favorites.html', context)
 @login_required
 def user_favorites(request):
-    # Получаем избранные товары пользователя с предварительной загрузкой связанных товаров
-    favorites = Favorite.objects.filter(user=request.user).select_related('product')
+    # 1. Получаем избранные товары пользователя с предварительной загрузкой связанных товаров
+    favorites_qs = Favorite.objects.filter(user=request.user).select_related('product')
+
+    # 2. Настраиваем пагинацию (например, по 8 товаров на страницу)
+    paginator = Paginator(favorites_qs, 8)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+
     context = {
-        'favorites': favorites,
+        'page_obj': page_obj,      # Ключевая переменная для шаблона (вместо favorites)
         'title': 'Мои избранные товары'
     }
     return render(request, 'accounts/favorites.html', context)
-
 @login_required
 def cards_list(request):
     cards = PaymentMethod.objects.filter(user=request.user)
@@ -268,28 +282,91 @@ def payment_methods_add(request):
     messages.success(request, 'Карта успешно добавлена')
     return render(request, 'orders/payment_form.html')
 
+
 @login_required
 def profile_view(request):
+
+    # Статистика по заказам
     stats = request.user.user_orders.aggregate(
         total_spent=Sum('total_price'),
         average_order=Avg('total_price'),
         orders_count=Count('id'),
-        total_discount=Sum('discount')  # <--- ДОБАВЬ ЭТУ СТРОКУ (имя поля должно совпадать с моделью)
+        total_discount=Sum('discount'),
     )
-    
-    # Теперь этот код сработает безопасно
+
     total_spent = stats['total_spent'] or 0
     average_order = stats['average_order'] or 0
     orders_count = stats['orders_count'] or 0
-    total_discount = stats['total_discount'] or 0  # <--- Теперь ключ существует
+    total_discount = stats['total_discount'] or 0
+
+    # Счётчик избранного (для карточки в профиле)
+    favorites_count = Favorite.objects.filter(user=request.user).count()
 
     context = {
         'total_spent': total_spent,
         'average_order': average_order,
         'orders_count': orders_count,
-        'total_discount': total_discount,  # <--- Передаем в шаблон
+        'total_discount': total_discount,
+        'favorites_count': favorites_count,  # <-- важно: теперь цифра будет актуальной
     }
     return render(request, 'accounts/profile.html', context)
+# @login_required
+# def profile_view(request):
+#     # 1. Статистика по заказам (ваш существующий код)
+#     stats = request.user.user_orders.aggregate(
+#         total_spent=Sum('total_price'),
+#         average_order=Avg('total_price'),
+#         orders_count=Count('id'),
+#         total_discount=Sum('discount')
+#     )
+    
+#     total_spent = stats['total_spent'] or 0
+#     average_order = stats['average_order'] or 0
+#     orders_count = stats['orders_count'] or 0
+#     total_discount = stats['total_discount'] or 0
+
+#     # 2. НОВАЯ ЛОГИКА: Получаем избранные товары
+#     # select_related('product') нужен для оптимизации запросов (чтобы не делать N+1 запросов к БД)
+#     favorites = Favorite.objects.filter(user=request.user).select_related('product')
+#     favorites_count = favorites.count()
+
+#     # 3. Формируем итоговый контекст
+#     context = {
+#         # Данные по заказам
+#         'total_spent': total_spent,
+#         'average_order': average_order,
+#         'orders_count': orders_count,
+#         'total_discount': total_discount,
+        
+#         # Данные по избранному (новые переменные)
+#         'favorites': favorites,
+#         'favorites_count': favorites_count,
+#     }
+    
+#     return render(request, 'accounts/profile.html', context)
+
+# @login_required
+# def profile_view(request):
+#     stats = request.user.user_orders.aggregate(
+#         total_spent=Sum('total_price'),
+#         average_order=Avg('total_price'),
+#         orders_count=Count('id'),
+#         total_discount=Sum('discount')  # <--- ДОБАВЬ ЭТУ СТРОКУ (имя поля должно совпадать с моделью)
+#     )
+    
+#     # Теперь этот код сработает безопасно
+#     total_spent = stats['total_spent'] or 0
+#     average_order = stats['average_order'] or 0
+#     orders_count = stats['orders_count'] or 0
+#     total_discount = stats['total_discount'] or 0  # <--- Теперь ключ существует
+
+#     context = {
+#         'total_spent': total_spent,
+#         'average_order': average_order,
+#         'orders_count': orders_count,
+#         'total_discount': total_discount,  # <--- Передаем в шаблон
+#     }
+#     return render(request, 'accounts/profile.html', context)
 
     # # Агрегируем суммы скидок и исходные суммы
     # stats = request.user.user_orders.aggregate(

@@ -29,7 +29,7 @@ urlpatterns = [
     path('cards/<int:pk>/delete/', views.delete_card, name='delete_card'),
 
     path('favorites/<int:product_id>/toggle/', views.toggle_favorite_ajax, name='toggle_favorite'),
-    path('favorites/', views.user_favorites, name='user_favorites'),
+    path('favorites/', views.user_favorites, name='favorites'),
 
     # Сброс пароля
     path('password-reset/',
