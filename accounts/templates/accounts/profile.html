@@ -5,231 +5,263 @@
 
 
 {% block extra_css %}
+
 <style>
-    /* Общий фон страницы (если нужно) */
-    body {
-        background-color: #f8f9fa;
-        color: #333;
-    }
-
-    /* Контейнер профиля */
+    /* Базовые настройки и типографика */
     .profile-container {
-        max-width: 1100px;
-        margin: 0 auto;
-        padding: 2rem 1rem;
+        background: #ffffff;
+        border-radius: 12px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        padding: 24px;
+        margin-top: 20px;
     }
 
-    /* Заголовок и кнопка «Выйти» */
+    /* Верхняя панель: заголовок и кнопка «Выйти» */
     .header {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        margin-bottom: 2rem;
+        margin-bottom: 24px;
+        padding-bottom: 16px;
+        border-bottom: 1px solid #f8fafc;
     }
 
     .header h1 {
-        font-size: 1.75rem;
-        font-weight: 600;
-        color: #1a1a1a;
+        font-size: 28px;
+        font-weight: 700;
+        color: #1e293b;
+        margin: 0;
+        line-height: 1.2;
     }
 
-    .btn-logout {
-        background-color: #dc3545;
-        color: white;
-        padding: 0.5rem 1rem;
-        border-radius: 6px;
+    .logout-btn {
         text-decoration: none;
-        font-size: 0.9rem;
+        color: #ffffff;
+        background-color: #363e4e7c;
+        font-size: 14px;
         font-weight: 500;
-        transition: background-color 0.2s;
-    }
-
-    .btn-logout:hover {
-        background-color: #c82333;
-    }
-
-    /* Уведомление «Профиль успешно обновлён» */
-    .alert-success {
-        background-color: #d4edda;
-        color: #155724;
-        padding: 1rem;
+        padding: 8px 16px;
         border-radius: 6px;
-        margin-bottom: 1.5rem;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
+        transition: all 0.2s ease;
+        border: 1px solid #5b5a5e70;
+        
     }
 
-    .alert-success .close-btn {
-        background: none;
-        border: none;
-        font-size: 1.2rem;
-        cursor: pointer;
-        color: #155724;
-        line-height: 1;
+    .logout-btn:hover {
+        color: #eef2f7;
+        background-color: #db3434;
     }
 
-    /* Левая колонка: аватар и данные */
-    .profile-left {
-        background: white;
-        padding: 1.5rem;
-        border-radius: 12px;
-        box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-        margin-bottom: 1.5rem;
-    }
-
-    .avatar-wrapper {
-        width: 80px;
-        height: 80px;
-        border-radius: 50%;
-        background-color: #e9ecef;
-        color: #888;
+    /* Карточка с аватаром и данными пользователя */
+    .avatar-container {
+        width: 100%;
+        height: 140px;
+        background-color: #fcfdfd;
+        border-radius: 10px;
         display: flex;
         align-items: center;
         justify-content: center;
-        font-weight: bold;
-        font-size: 1.5rem;
-        margin-bottom: 1rem;
         overflow: hidden;
+        margin-bottom: 16px;
+        border: 1px solid #ffffff;
     }
 
-    .avatar-wrapper img {
+    .avatar {
         width: 100%;
         height: 100%;
         object-fit: cover;
-    }
-
-    .profile-name {
-        font-size: 1.25rem;
-        font-weight: 600;
-        color: #1a1a1a;
-        margin-bottom: 0.25rem;
-    }
-
-    .profile-info p {
-        font-size: 0.9rem;
-        color: #666;
-        margin-bottom: 0.25rem;
-    }
-
-    .profile-info strong {
-        color: #333;
-    }
-
-    /* Меню действий (кнопки) */
-    .action-menu {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 0.75rem;
-        margin-bottom: 2rem;
-    }
-
-    .btn-outline {
-        background: white;
-        border: 1px solid #dee2e6;
-        color: #495057;
-        padding: 0.5rem 1rem;
-        border-radius: 6px;
-        font-size: 0.875rem;
-        font-weight: 500;
-        cursor: pointer;
-        transition: all 0.2s;
-    }
-
-    .btn-outline:hover {
-        border-color: #8E2DE2;
-        color: #8E2DE2;
-        background-color: #f8e5ff;
-    }
-
-    /* Статистика (карточки как на фото) */
-    .stats-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-        gap: 1rem;
-        margin-bottom: 2rem;
-    }
-
-    .stat-card {
-        background: linear-gradient(135deg, #8E2DE2 0%, #4A00E0 100%);
-        color: white;
-        padding: 1.25rem;
-        border-radius: 12px;
-        text-align: center;
-        box-shadow: 0 4px 12px rgba(142, 45, 226, 0.25);
-    }
-
-    .stat-number {
-        font-size: 1.75rem;
-        font-weight: 700;
-        line-height: 1.2;
         display: block;
     }
 
-    .stat-label {
-        font-size: 0.875rem;
-        opacity: 0.95;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-    }
-
-    /* Блок «Последние заказы» */
-    .orders-block {
-        background: white;
-        padding: 1.5rem;
-        border-radius: 12px;
-        box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-    }
-
-    .orders-block h3 {
-        font-size: 1.125rem;
+    .profile-info h2 {
+        font-size: 22px;
         font-weight: 600;
-        margin-bottom: 1rem;
-        color: #333;
+        color: #1e293b;
+        margin-bottom: 12px;
     }
 
-    .order-item {
-        border-bottom: 1px solid #eee;
-        padding: 1rem 0;
+    .profile-info p {
+        font-size: 14px;
+        color: #64748b;
+        line-height: 1.5;
+        margin: 4px 0;
     }
 
-    .order-item:last-child {
-        border-bottom: none;
-    }
-
-    .order-header {
+    /* Панель кнопок действий */
+    .action-buttons {
         display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 0.25rem;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-bottom: 24px;
     }
 
-    .order-total {
+    .action-buttons .btn {
+        border-radius: 8px;
+        font-size: 14px;
+        font-weight: 500;
+        padding: 10px 16px;
+        border: 1px solid #cbd5e1;
+        color: #334155;
+        background-color: #6695bb;
+        transition: all 0.2s ease;
+    }
+
+    .action-buttons .btn:hover {
+        border-color: #3b82f6;
+        color: #5774a3;
+        background-color: #eff6ff;
+    }
+
+    /* Статистика: сетка карточек */
+    .stats {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+        gap: 16px;
+        margin-bottom: 20px;
+    }
+
+    .stat-card {
+        background: linear-gradient(135deg, #0c1cf571 0%, #d0d1d6e8 100%);
+        color: white;
+        padding: 16px;
+        border-radius: 10px;
+        text-align: center;
+        border: 1px solid #e2e8f0;
+    }
+
+    .stat-card h3 {
+        font-size: 24px;
         font-weight: 700;
-        color: #333;
+        color: #2b59ad;
+        margin: 0 0 6px 0;
     }
 
-    .order-status {
-        font-size: 0.825rem;
-        padding: 0.25rem 0.6rem;
-        border-radius: 20px;
-        background-color: #f0f0f0;
-        color: #666;
+    .stat-card p {
+        font-size: 13px;
+        color: #3b5163;
+        margin: 0;
     }
 
-    /* Адаптивность */
+    /* Блок средней скидки (выделенный) */
+    .discount-block {
+        background: #ffffff;
+        padding: 16px;
+        border-radius: 10px;
+        text-align: center;
+        border: 1px solid #e2e8f0;
+        box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.05);
+    }
+
+    .discount-block h3 {
+        font-size: 24px;
+        font-weight: 700;
+        color: #d34e4e;
+        margin: 0 0 6px 0;
+    }
+
+    .discount-block p {
+        font-size: 13px;
+        color: #64748b;
+        margin: 0;
+    }
+
+/* Список заказов: сброс стилей списка */
+
+/* Сброс стилей списка */
+.orders-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+/* Карточка заказа — как на референсе */
+.order-item {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 16px 20px;
+    margin-bottom: 12px;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    font-size: 14px;
+    color: #334155;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    transition: all 0.2s ease;
+}
+
+.order-item:hover {
+    border-color: #cbd5e1;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.06);
+}
+
+/* Левая часть: заголовок и дата */
+.order-left {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.order-title {
+    font-weight: 600;
+    color: #1e293b;
+    font-size: 15px;
+}
+
+.order-date {
+    font-size: 12px;
+    color: #64748b;
+}
+
+/* Правая часть: цена и статус */
+.order-right {
+    text-align: right;
+}
+
+.order-price {
+    font-weight: 700;
+    color: #1e293b;
+    font-size: 16px;
+    display: block;
+    margin-bottom: 8px;
+}
+
+.order-status {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: 4px 8px;
+    border-radius: 6px;
+    background: #f1f5f9;
+    color: #64748b;
+    border: 1px solid #e2e8f0;
+}
+
+/* Статус «Новый» — как на референсе (зелёный акцент) */
+.order-status.status-new {
+    background: #ecfdf5;
+    border-color: #d1fae5;
+    color: #059669;
+}
+
+    /* Адаптивность для мобильных */
     @media (max-width: 768px) {
         .header {
             flex-direction: column;
             align-items: flex-start;
-            gap: 1rem;
+            gap: 12px;
         }
-        .btn-logout {
-            width: 100%;
-            text-align: center;
+
+        .header h1 {
+            font-size: 24px;
         }
-        .profile-container {
-            padding: 1rem;
+
+        .stats {
+            grid-template-columns: 1fr 1fr;
+        }
+
+        .avatar-container {
+            height: 120px;
         }
     }
 </style>
@@ -245,6 +277,7 @@
 
     <!-- Основной контейнер -->
     <div class="row g-4 profile-container">
+    
         <!-- Левая колонка: аватар и базовые данные -->
 <div class="col-12 col-md-4">
   <div class="card border-0 shadow-sm h-100">
@@ -253,20 +286,10 @@
                 {% if user.avatar %}
             <img src="{{ user.avatar.url }}" alt="Аватар пользователя" class="avatar">
                 {% else %}
-            <img src="{% static 'images/default-avatar.png' %}" alt="Аватар по умолчанию" class="avatar">
+            <img src="{% if user.avatar %}{{ user.avatar.url }}{% else %}{% static 'images/default-avatar.png' %}{% endif %}" alt="Фото" class="avatar">
                 {% endif %}
             </div>
 
-            {% comment %} <div class="form-group">
-    <label for="id_avatar">Аватар</label>
-    <input type="file" name="avatar" id="id_avatar" accept="image/*">
-</div>
-
-{% if user.avatar %}
-    <img src="{{ user.avatar.url }}" alt="Аватар" class="profile-avatar">
-{% else %}
-    <span class="default-avatar">Аватар по умолчанию</span>
-{% endif %} {% endcomment %}
             <!-- Данные -->
             <h2 class="h4 mb-3">{{ user.username }}</h2>
             <p class="text-muted mb-2"><strong>Email:</strong> {{ user.email }}</p>
@@ -315,17 +338,27 @@
         <p>Средний чек</p>
     </div>
 </div>
-{% if orders %}
-    <ul>
-        {% for order in orders %}
 
-<li>Заказ #{{ order.id }} от {{ order.created_at|date:"d.m.Y H:i" }} — {{ order.total_price|floatformat:2 }} ₽ 
-    <span style="color: gray; font-size: 0.8em;">({{ order.get_status_display }})</span>
-</li>
+
+{% if orders %}
+    <ul class="orders-list">
+        {% for order in orders %}
+            <li class="order-item">
+                <div class="order-left">
+                    <span class="order-title">Заказ #{{ order.id }}</span>
+                    <span class="order-date">{{ order.created_at|date:"d.m.Y H:i" }}</span>
+                </div>
+                <div class="order-right">
+                    <span class="order-price">{{ order.total_price|floatformat:2 }} ₽</span>
+                    <span class="order-status{% if order.get_status_display == 'Новый' %} status-new{% endif %}">
+                        {{ order.get_status_display }}
+                    </span>
+                </div>
+            </li>
         {% endfor %}
     </ul>
 {% else %}
-    <p>У вас пока нет заказов.</p>
+    <p class="text-muted">У вас пока нет заказов.</p>
 {% endif %}
             </div>
         </div>

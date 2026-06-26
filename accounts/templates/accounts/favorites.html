@@ -50,7 +50,7 @@
                         <span class="h5 fw-bold text-primary">{{ fav.product.price }} ₽</span>
                       {% endif %}
 
-                      <form action="{% url 'cart:add' fav.product.id %}" method="post" class="mt-3">
+                      <form action="{% url 'cart:cart_add' fav.product.id %}" method="post" class="mt-3">
                         {% csrf_token %}
                         <button type="submit" class="btn btn-outline-success w-100">
                           В корзину

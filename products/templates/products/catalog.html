@@ -183,13 +183,18 @@
                     {% endif %}
 
                     <!-- Форма корзины -->
-
-                <form action="{% url 'cart:add' product.id %}" method="post" class="mt-3">
+{% comment %} <form method="post" action="{% url 'cart:cart_add' product.id %}">
+  {% csrf_token %}
+  {{ form.quantity }}
+  <button type="submit">В корзину</button>
+</form> {% endcomment %}
+                 <form action="{% url 'cart:cart_add' product.id %}" method="post" class="mt-3">
                       {% csrf_token %}
+
                       <button type="submit" class="btn btn-outline-success w-100">
                         <i class="fas fa-cart-plus me-2"></i> В корзину
                       </button>
-                    </form>  
+                    </form> 
 
                     <!-- Кнопка Подробнее -->
                     <a href="{% url 'products:product_detail' product.slug %}" class="btn btn-outline-primary w-100 mt-2">
