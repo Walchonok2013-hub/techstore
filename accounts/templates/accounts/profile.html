@@ -282,13 +282,14 @@
 <div class="col-12 col-md-4">
   <div class="card border-0 shadow-sm h-100">
                     <!-- Блок аватара -->
-            <div class="avatar-container">
-                {% if user.avatar %}
-            <img src="{{ user.avatar.url }}" alt="Аватар пользователя" class="avatar">
-                {% else %}
-            <img src="{% if user.avatar %}{{ user.avatar.url }}{% else %}{% static 'images/default-avatar.png' %}{% endif %}" alt="Фото" class="avatar">
-                {% endif %}
-            </div>
+<div class="avatar-container">
+    {% if user.avatar and user.avatar.url %}
+        <img src="{{ user.avatar.url }}" alt="Аватар пользователя" class="avatar">
+    {% else %}
+        <!-- Путь относительно MEDIA_ROOT -->
+        <img src="/media/avatars/default-avatar.png" alt="Фото" class="avatar">
+    {% endif %}
+</div>
 
             <!-- Данные -->
             <h2 class="h4 mb-3">{{ user.username }}</h2>
