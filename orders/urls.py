@@ -12,7 +12,7 @@ urlpatterns = [
     path('products/', views.product_list, name='product_list'),
     path('payment/form/', views.payment_form_view, name='payment_form'), 
     path('my-orders/', views.my_orders, name='my_orders'),
-    path('create/', views.create_order_view, name='create'),
+    path('checkout/', views.create_order_view, name='create'),
     
    
      # приём данных и перенаправление

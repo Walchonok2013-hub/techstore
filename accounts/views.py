@@ -17,6 +17,7 @@ from django.db.models import Sum
 from .models import Address 
 from django.views.decorators.http import require_http_methods
 from .models import Favorite
+from orders.models import Order
 from products.models import Product
 from django.db.models import Sum, Avg, Count
 from .models import PaymentMethod
@@ -283,33 +284,67 @@ def payment_methods_add(request):
     return render(request, 'orders/payment_form.html')
 
 
-@login_required
-def profile_view(request):
+# @login_required
+# def profile_view(request):
 
-    # Статистика по заказам
-    stats = request.user.user_orders.aggregate(
-        total_spent=Sum('total_price'),
-        average_order=Avg('total_price'),
-        orders_count=Count('id'),
-        total_discount=Sum('discount'),
-    )
+#     # Статистика по заказам
+#     stats = request.user.user_orders.aggregate(
+#         total_spent=Sum('total_price'),
+#         average_order=Avg('total_price'),
+#         orders_count=Count('id'),
+#         total_discount=Sum('discount'),
+#     )
 
-    total_spent = stats['total_spent'] or 0
-    average_order = stats['average_order'] or 0
-    orders_count = stats['orders_count'] or 0
-    total_discount = stats['total_discount'] or 0
+#     total_spent = stats['total_spent'] or 0
+#     average_order = stats['average_order'] or 0
+#     orders_count = stats['orders_count'] or 0
+#     total_discount = stats['total_discount'] or 0
 
-    # Счётчик избранного (для карточки в профиле)
-    favorites_count = Favorite.objects.filter(user=request.user).count()
+#     # Счётчик избранного (для карточки в профиле)
+#     favorites_count = Favorite.objects.filter(user=request.user).count()
 
-    context = {
-        'total_spent': total_spent,
-        'average_order': average_order,
-        'orders_count': orders_count,
-        'total_discount': total_discount,
-        'favorites_count': favorites_count,  # <-- важно: теперь цифра будет актуальной
-    }
-    return render(request, 'accounts/profile.html', context)
+#     context = {
+#         'total_spent': total_spent,
+#         'average_order': average_order,
+#         'orders_count': orders_count,
+#         'total_discount': total_discount,
+#         'favorites_count': favorites_count,  # <-- важно: теперь цифра будет актуальной
+#     }
+  
+
+#     total_discount = stats['total_discount'] or 0
+#     total_original = stats['total_original'] or 0
+
+#     # Считаем процент: (Сумма скидок / Исходная сумма) * 100
+#     # Защита от деления на ноль, если заказов нет или original_price = 0
+#     if total_original > 0:
+#         average_discount_percent = (total_discount / total_original) * 100
+#     else:
+#         average_discount_percent = 0
+
+#     context = {
+#         # ... другие переменные ...
+#         'average_discount_percent': average_discount_percent,
+#     }
+
+#     # Средний чек
+#     if total_orders > 0:
+#         average_check = total_spent / total_orders
+#     else:
+#         average_check = 0
+
+#     # Добавляем average_check в контекст!
+#     context = {
+#         'user': request.user,
+#         'total_orders': total_orders,
+#         'total_spent': total_spent,
+#         'favorite_count': favorite_count,
+#         'orders': orders,
+#         'average_check': average_check,
+#         'average_discount_percent': average_discount_percent,
+#     }
+#     return render(request, 'accounts/profile.html', context)
+
 # @login_required
 # def profile_view(request):
 #     # 1. Статистика по заказам (ваш существующий код)
@@ -368,43 +403,55 @@ def profile_view(request):
 #     }
 #     return render(request, 'accounts/profile.html', context)
 
-    # # Агрегируем суммы скидок и исходные суммы
-    # stats = request.user.user_orders.aggregate(
-    #     total_discount=Sum('discount_amount'),
-    #     total_original=Sum('original_price')
-    # )
+#     # Агрегируем суммы скидок и исходные суммы
+#     stats = request.user.user_orders.aggregate(
+#         total_discount=Sum('discount_amount'),
+#         total_original=Sum('original_price')
+#     )
 
+@login_required
+def profile_view(request):
+    # Агрегация данных
+    stats = request.user.user_orders.aggregate(
+        total_spent=Sum('total_price'),
+        orders_count=Count('id'),
+        total_discount=Sum('discount'),
+        total_original=Sum('original_total'),
+    )
+
+    # Безопасное получение значений (защита от None)
+    total_spent = stats['total_spent'] or 0
+    orders_count = stats['orders_count'] or 0
     total_discount = stats['total_discount'] or 0
     total_original = stats['total_original'] or 0
 
-    # Считаем процент: (Сумма скидок / Исходная сумма) * 100
-    # Защита от деления на ноль, если заказов нет или original_price = 0
+    # Расчет средней скидки в процентах
+    # Формула: (Сумма всех скидок / Сумма всех исходных цен) * 100
     if total_original > 0:
         average_discount_percent = (total_discount / total_original) * 100
     else:
         average_discount_percent = 0
 
-    context = {
-        # ... другие переменные ...
-        'average_discount_percent': average_discount_percent,
-    }
-
-    # Средний чек
-    if total_orders > 0:
-        average_check = total_spent / total_orders
+    # Расчет среднего чека
+    if orders_count > 0:
+        average_check = total_spent / orders_count
     else:
         average_check = 0
 
-    # Добавляем average_check в контекст!
+    # Считаем избранное
+    favorites_count = Favorite.objects.filter(user=request.user).count()
+
     context = {
         'user': request.user,
-        'total_orders': total_orders,
         'total_spent': total_spent,
-        'favorite_count': favorite_count,
-        'orders': orders,
-        'average_check': average_check,
+        'orders_count': orders_count,
+        'favorites_count': favorites_count,
         'average_discount_percent': average_discount_percent,
+        'average_check': average_check,
+        # Можно передать сырые данные для отладки, если нужно
+        'stats_raw': stats, 
     }
+
     return render(request, 'accounts/profile.html', context)
 
 def register_view(request):

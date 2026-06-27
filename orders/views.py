@@ -9,6 +9,9 @@ from django.db import transaction
 from django.contrib import messages
 from django.shortcuts import render, redirect
 import logging
+from .models import Order
+from .forms import OrderCreateForm 
+from cart.cart import Cart  
 
 logger = logging.getLogger(__name__)
 
@@ -96,15 +99,100 @@ def product_list(request):
 
 
 
-
-
-
+@login_required
 def create_order_view(request):
+    cart = Cart(request)
+    if not cart:  # или len(cart) == 0, зависит от реализации
+        return redirect('products:catalog')
+
+
     if request.method == 'POST':
-        # логика создания заказа
-        return redirect('orders:payment')
+        form = OrderCreateForm(request.POST)  # <-- Используем OrderCreateForm
+        if form.is_valid():
+            # Считаем полную стоимость ДО скидки
+            base_price = sum(item['quantity'] * item['product'].price for item in cart)
+            
+            # Твоя логика скидки (сейчас 0)
+            discount_amount = base_price * 0.2 
+            
+            final_price = base_price - discount_amount
+            if final_price < 0:
+                final_price = 0
+
+            order = Order.objects.create(
+                user=request.user,
+                first_name=form.cleaned_data['first_name'],
+                last_name=form.cleaned_data['last_name'],
+                email=form.cleaned_data['email'],
+                phone=form.cleaned_data['phone'],
+                address=form.cleaned_data['address'],
+                notes=form.cleaned_data.get('notes', ''),
+                
+                original_total=base_price,
+                discount=discount_amount,
+                total_price=final_price,
+                status='new',
+            )
+
+            cart.clear()
+            return redirect('orders:order_created', order_id=order.id)
     else:
-        return render(request, 'orders/create.html')
+        form = OrderCreateForm()  # <-- Создаём пустую форму
+
+    return render(request, 'orders/checkout.html', {'form': form, 'cart': cart})
+
+
+# @login_required
+# def create_order_view(request):
+#     cart = Cart(request)
+    
+#     if request.method == 'POST':
+#         form = OrderCreateForm(request.POST)  # предположим, что у тебя есть форма OrderForm
+#         if form.is_valid():
+#             # 1. Считаем полную стоимость ДО скидки (base_price)
+#             base_price = sum(item['quantity'] * item['product'].price for item in cart)
+            
+#             # 2. Считаем скидку (если у тебя есть логика скидок — например, промокод или процент)
+#             # Если скидок нет, просто ставь 0
+#             discount_amount = base_price * 0.2  # <-- Вставь сюда свою логику расчёта скидки
+            
+#             # 3. Считаем итоговую цену
+#             final_price = base_price - discount_amount
+#             if final_price < 0:
+#                 final_price = 0
+
+#             # 4. Создаём заказ, обязательно заполняя original_total
+#             order = Order.objects.create(
+#                 user=request.user,
+#                 first_name=form.cleaned_data['first_name'],
+#                 last_name=form.cleaned_data['last_name'],
+#                 email=form.cleaned_data['email'],
+#                 phone=form.cleaned_data['phone'],
+#                 address=form.cleaned_data['address'],
+#                 notes=form.cleaned_data.get('notes', ''),
+                
+#                 original_total=base_price,      # <-- Полная стоимость ДО скидки
+#                 discount=discount_amount,        # <-- Сумма скидки в рублях
+#                 total_price=final_price,         # <-- Итоговая цена к оплате
+#                 status='new',
+#             )
+
+#             # 5. Сохраняем позиции заказа (если у тебя есть модель OrderItem)
+#             # Если её нет — этот блок можно пропустить
+#             for item in cart:
+#                 product = item['product']
+#                 quantity = item['quantity']
+#                 price = product.price
+#                 # Здесь можно создать OrderItem(order=order, product=product, quantity=quantity, price=price)
+
+#             # 6. Очищаем корзину
+#             cart.clear()
+
+#             return redirect('orders:order_created', order_id=order.id)
+#     else:
+#         form = OrderForm()
+
+#     return render(request, 'orders/checkout.html', {'form': form, 'cart': cart})
 
 def payment_view(request):
     if request.method == 'POST':

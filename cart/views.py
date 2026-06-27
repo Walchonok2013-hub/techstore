@@ -84,7 +84,7 @@ def cart_remove_item(request, product_id):
     else:
         messages.warning(request, 'Товар не найден в корзине')
 
-    return redirect('cart:detail')
+    return redirect('cart:cart_detail')
 def cart_detail(request):
     cart = Cart(request)
     try:
