@@ -8,7 +8,8 @@ from accounts.models import Favorite
 from django.contrib.auth import views as auth_views
 from techstore import settings
 from orders.models import Order
-from .forms import UserEditForm
+from .models import Profile
+from .forms import UserEditForm, ProfileEditForm
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.http import require_POST
 from django.http import JsonResponse
@@ -284,130 +285,6 @@ def payment_methods_add(request):
     return render(request, 'orders/payment_form.html')
 
 
-# @login_required
-# def profile_view(request):
-
-#     # Статистика по заказам
-#     stats = request.user.user_orders.aggregate(
-#         total_spent=Sum('total_price'),
-#         average_order=Avg('total_price'),
-#         orders_count=Count('id'),
-#         total_discount=Sum('discount'),
-#     )
-
-#     total_spent = stats['total_spent'] or 0
-#     average_order = stats['average_order'] or 0
-#     orders_count = stats['orders_count'] or 0
-#     total_discount = stats['total_discount'] or 0
-
-#     # Счётчик избранного (для карточки в профиле)
-#     favorites_count = Favorite.objects.filter(user=request.user).count()
-
-#     context = {
-#         'total_spent': total_spent,
-#         'average_order': average_order,
-#         'orders_count': orders_count,
-#         'total_discount': total_discount,
-#         'favorites_count': favorites_count,  # <-- важно: теперь цифра будет актуальной
-#     }
-  
-
-#     total_discount = stats['total_discount'] or 0
-#     total_original = stats['total_original'] or 0
-
-#     # Считаем процент: (Сумма скидок / Исходная сумма) * 100
-#     # Защита от деления на ноль, если заказов нет или original_price = 0
-#     if total_original > 0:
-#         average_discount_percent = (total_discount / total_original) * 100
-#     else:
-#         average_discount_percent = 0
-
-#     context = {
-#         # ... другие переменные ...
-#         'average_discount_percent': average_discount_percent,
-#     }
-
-#     # Средний чек
-#     if total_orders > 0:
-#         average_check = total_spent / total_orders
-#     else:
-#         average_check = 0
-
-#     # Добавляем average_check в контекст!
-#     context = {
-#         'user': request.user,
-#         'total_orders': total_orders,
-#         'total_spent': total_spent,
-#         'favorite_count': favorite_count,
-#         'orders': orders,
-#         'average_check': average_check,
-#         'average_discount_percent': average_discount_percent,
-#     }
-#     return render(request, 'accounts/profile.html', context)
-
-# @login_required
-# def profile_view(request):
-#     # 1. Статистика по заказам (ваш существующий код)
-#     stats = request.user.user_orders.aggregate(
-#         total_spent=Sum('total_price'),
-#         average_order=Avg('total_price'),
-#         orders_count=Count('id'),
-#         total_discount=Sum('discount')
-#     )
-    
-#     total_spent = stats['total_spent'] or 0
-#     average_order = stats['average_order'] or 0
-#     orders_count = stats['orders_count'] or 0
-#     total_discount = stats['total_discount'] or 0
-
-#     # 2. НОВАЯ ЛОГИКА: Получаем избранные товары
-#     # select_related('product') нужен для оптимизации запросов (чтобы не делать N+1 запросов к БД)
-#     favorites = Favorite.objects.filter(user=request.user).select_related('product')
-#     favorites_count = favorites.count()
-
-#     # 3. Формируем итоговый контекст
-#     context = {
-#         # Данные по заказам
-#         'total_spent': total_spent,
-#         'average_order': average_order,
-#         'orders_count': orders_count,
-#         'total_discount': total_discount,
-        
-#         # Данные по избранному (новые переменные)
-#         'favorites': favorites,
-#         'favorites_count': favorites_count,
-#     }
-    
-#     return render(request, 'accounts/profile.html', context)
-
-# @login_required
-# def profile_view(request):
-#     stats = request.user.user_orders.aggregate(
-#         total_spent=Sum('total_price'),
-#         average_order=Avg('total_price'),
-#         orders_count=Count('id'),
-#         total_discount=Sum('discount')  # <--- ДОБАВЬ ЭТУ СТРОКУ (имя поля должно совпадать с моделью)
-#     )
-    
-#     # Теперь этот код сработает безопасно
-#     total_spent = stats['total_spent'] or 0
-#     average_order = stats['average_order'] or 0
-#     orders_count = stats['orders_count'] or 0
-#     total_discount = stats['total_discount'] or 0  # <--- Теперь ключ существует
-
-#     context = {
-#         'total_spent': total_spent,
-#         'average_order': average_order,
-#         'orders_count': orders_count,
-#         'total_discount': total_discount,  # <--- Передаем в шаблон
-#     }
-#     return render(request, 'accounts/profile.html', context)
-
-#     # Агрегируем суммы скидок и исходные суммы
-#     stats = request.user.user_orders.aggregate(
-#         total_discount=Sum('discount_amount'),
-#         total_original=Sum('original_price')
-#     )
 
 @login_required
 def profile_view(request):
@@ -467,19 +344,34 @@ def register_view(request):
     return render(request, 'accounts/register.html', {'form': form})
 
 
+
 @login_required
 def edit_profile(request):
+    user = request.user
+
+    # Гарантированно получаем профиль: создаём, если нет
+    profile, created = Profile.objects.get_or_create(user=user)
+
     if request.method == 'POST':
-        form = UserEditForm(request.POST, request.FILES, instance=request.user)
-        if form.is_valid():
-            form.save()
+        user_form = UserEditForm(request.POST, instance=user)
+        profile_form = ProfileEditForm(request.POST, request.FILES, instance=profile)
+
+        if user_form.is_valid() and profile_form.is_valid():
+            user_form.save()
+            profile_form.save()
             messages.success(request, 'Профиль успешно обновлён!')
             return redirect('accounts:profile')
         else:
             messages.error(request, 'Пожалуйста, исправьте ошибки в форме.')
     else:
-        form = UserEditForm(instance=request.user)
-    context = {'form': form}
+        user_form = UserEditForm(instance=user)
+        profile_form = ProfileEditForm(instance=profile)
+
+    context = {
+        'form': user_form,
+        'profile_form': profile_form,
+        'user': user,
+    }
     return render(request, 'accounts/edit_profile.html', context)
 
 

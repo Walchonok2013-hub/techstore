@@ -69,3 +69,10 @@ class PaymentMethod(models.Model):
     def __str__(self):
         return f"Карта пользователя {self.user.username}"
  
+class Profile(models.Model):
+    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='profile')
+    bio = models.TextField(blank=True, max_length=500, verbose_name='О себе')
+    avatar = models.ImageField(upload_to='avatars/', blank=True, null=True, verbose_name='Аватар')
+
+    def __str__(self):
+        return f'Профиль {self.user.username}'

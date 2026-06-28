@@ -71,9 +71,23 @@
 <div class="alert alert-warning">
 <h4>Скидка 20 % на все смартфоны!</h4>
 <p>Только до конца месяца — покупайте смартфоны со скидкой 20 %.</p>
-<a href="#" class="btn btn-warning">Смотреть смартфоны</a>
+<a href="#" class="btn btn-warning"style="background-color: #ffd752;">Смотреть смартфоны</a>
 </div>
+    <!-- О нас -->
+<section class="about-us mb-5">
+    <div class="text-center mb-4">
+        <h2 class="font-weight-normal" style="color: #1e293b; font-size: 24px; margin-bottom: 8px;">Почему выбирают нас?</h2>
+        <p style="color: #64748b; font-size: 16px; margin-bottom: 24px;">Мы предлагаем:</p>
+    </div>
+    
+    <ul class="features-list mx-auto" style="max-width: 180px; color: #405169;">
+        <li>Гарантия качества</li>
+        <li>Быстрая доставка</li>
+        <li>Удобный возврат</li>
+        <li>Поддержка 24/7</li>
+    </ul>
 </section>
+{% comment %} </section>
 <!-- О нас -->
 <section class="about-us">
 <div class="row">
@@ -88,7 +102,7 @@
 </ul>
 </div>
 </div>
-</section>
+</section> {% endcomment %}
 </div>
 </div>
 </div>
@@ -96,3 +110,258 @@
 {% load cache %}
 {% load category_tags %}
 {% load user_carts %}
+
+
+
+{% comment %} 
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Главная — Магазин{% endblock %}
+
+{% block extra_css %}
+<style>
+
+
+    /* Центрирование контента в секциях */
+    .text-center-custom {
+        text-align:center;
+    }
+
+    /* Карточка товара */
+    .product-card {
+        border: none;
+        border-radius: 12px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
+        transition: transform 0.2s, box-shadow 0.2s;
+        height: 100%; /* Чтобы карточки были одной высоты */
+        display: flex;
+        flex-direction: column;
+    }
+
+    .product-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+    }
+
+    .product-img-wrapper {
+        height: 220px;
+        overflow: hidden;
+        background-color: #f8fafc;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .product-img-wrapper img {
+        width: 100%;
+        height: 100%;
+        object-fit: contain; /* Используем contain, чтобы товар не обрезался и был по центру */
+        transition: transform 0.4s ease;
+    }
+
+    .product-card:hover .product-img-wrapper img {
+        transform: scale(1.05);
+    }
+
+    .product-title {
+        font-size: 16px;
+        font-weight: 700;
+        color: #1e293b;
+        line-height: 1.4;
+        margin-top: 12px;
+        margin-bottom: 8px;
+        text-align: center;
+    }
+
+    .product-price {
+        color: #6695bb;
+        font-weight: 700;
+        font-size: 1.2rem;
+        margin: 0 0 16px 0;
+        text-align: center;
+    }
+
+    /* Кнопка Подробнее - теперь по центру */
+    .btn-center-block {
+        text-align: center;
+        margin-top: auto; /* Прижимает кнопку к низу карточки */
+    }
+
+    .btn-outline-primary-custom {
+        color: #6695bb;
+        border-color: #6695bb;
+        font-weight: 600;
+        padding: 10px 24px;
+        border-radius: 8px;
+        width: 100%;       /* Растягиваем на всю ширину блока кнопки */
+        max-width: 200px;  /* Но не шире 200px для аккуратности */
+        margin: 0 auto;    /* Центрируем саму кнопку */
+        transition: all 0.2s;
+    }
+
+    .btn-outline-primary-custom:hover {
+        background-color: #6695bb;
+        color: #2c62d4;
+    }
+
+    /* Блок акции */
+    .promo-card {
+        background-color: #fffbe6;
+        border-radius: 12px;
+        padding: 24px;
+        border: 1px solid #fdf6e3;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
+        text-align: center; /* Центрируем текст внутри промо */
+    }
+
+    .promo-title {
+        font-size: 20px;
+        font-weight: 700;
+        color: #334155;
+        margin: 0 0 12px 0;
+    }
+
+    .promo-subtitle {
+        font-size: 14px;
+        color: #64748b;
+        margin: 0 0 20px 0;
+    }
+
+    .promo-btn {
+        display: inline-block;
+        padding: 10px 24px;
+        background-color: #fbbf24;
+        color: #1e293b;
+        font-weight: 600;
+        text-decoration: none;
+        border-radius: 8px;
+        transition: all 0.2s ease;
+    }
+
+    .promo-btn:hover {
+        background-color: #f59e0b;
+        box-shadow: 0 4px 12px rgba(251, 191, 36, 0.4);
+    }
+
+    /* Список «Почему выбирают нас» — точки как на макете */
+    .features-list {
+        list-style: none;
+        padding: 0;
+        margin: 0  auto;
+        max-width: 500px;
+        text-align: center;
+    }
+
+    .features-list li {
+        position: relative;
+        padding-left: 24px;
+        margin-bottom: 12px;
+        color: #334155;
+        font-size: 15px;
+    }
+
+    .features-list li::before {
+        content: "•";
+        position:relative;
+
+        right:10px;
+        top: 2px;
+        color: #6695bb;
+        font-weight: bold;
+        font-size: 18px;
+        line-height: 1;
+    }
+    @media (max-width: 768px) {
+        .promo-card {
+            padding: 16px;
+        }
+        .promo-title {
+            font-size: 18px;
+        }
+    }
+</style>
+{% endblock %} 
+
+{% block content %}
+<div class="container mt-5">
+    <!-- Приветственный баннер -->
+    <section class="welcome-banner text-center-custom mb-5">
+        <h1 class="display-4 mb-3" style="color: #1e293b;">Добро пожаловать в наш магазин "Techstore"!</h1>
+        <p class="lead text-muted mb-4">Лучшие товары по выгодным ценам</p>
+        <a href="{% url 'products:catalog' %}" class="btn btn-primary btn-lg px-5" style="background-color: #6695bb; border: none; border-radius: 8px;">
+            Перейти в каталог
+        </a>
+    </section>
+
+    <!-- Популярные товары -->
+    <section class="popular-products mb-5">
+        <div class="text-center-custom mb-4">
+            <h2 class="font-weight-normal" style="color: #1e293b; font-size: 24px;">Популярные товары</h2>
+        </div>
+        <div class="row g-4">
+            {% for product in popular_products %}
+                <div class="col-lg-4 col-md-6 col-sm-12">
+                    <div class="card product-card h-100">
+                        <div class="product-img-wrapper">
+                            {% if product.image %}
+                                <img src="{{ product.image.url }}"
+                                     alt="{{ product.name }}"
+                                     class="w-100 h-100">
+                            {% else %}
+                                <div class="w-100 h-100 d-flex align-items-center justify-content-center bg-light text-muted">
+                                    Нет фото
+                                </div>
+                            {% endif %}
+                        </div>
+                        <div class="card-body d-flex flex-column">
+                            <h5 class="product-title">{{ product.name }}</h5>
+                            <p class="product-price">{{ product.price }} ₽</p>
+                            
+                            <!-- Блок с кнопкой по центру -->
+                            <div class="btn-center-block">
+                                <a href="{% url 'products:product_detail' product.slug %}"
+                                   class="btn btn-outline-primary-custom">
+                                    Подробнее
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% empty %}
+                <div class="col-12 text-center py-5">
+                    <p class="text-muted">Пока нет популярных товаров.</p>
+                </div>
+            {% endfor %}
+        </div>
+    </section>
+
+    <!-- Акции -->
+    <section class="promotions mb-5">
+        <div class="text-center-custom mb-4">
+            <h2 class="font-weight-normal" style="color: #1e293b; font-size: 24px;">Акции и скидки</h2>
+        </div>
+        <div class="promo-card">
+            <h3 class="promo-title">Скидка 20 % на все смартфоны!</h3>
+            <p class="promo-subtitle">Только до конца месяца — покупайте смартфоны со скидкой 20 %.</p>
+            <a href="{% url 'products:catalog' %}" class="promo-btn">Смотреть смартфоны</a>
+        </div>
+    </section>
+
+    <!-- О нас -->
+<section class="about-us mb-5">
+    <div class="text-center mb-4">
+        <h2 class="font-weight-normal" style="color: #1e293b; font-size: 24px; margin-bottom: 8px;">Почему выбирают нас?</h2>
+        <p style="color: #64748b; font-size: 16px; margin-bottom: 24px;">Мы предлагаем:</p>
+    </div>
+    
+    <ul class="features-list mx-auto" style="max-width: 400px;">
+        <li>Гарантия качества</li>
+        <li>Быстрая доставка</li>
+        <li>Удобный возврат</li>
+        <li>Поддержка 24/7</li>
+    </ul>
+</section>
+</div>
+{% endblock %}  {% endcomment %}
+

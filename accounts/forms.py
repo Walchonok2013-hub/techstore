@@ -1,7 +1,32 @@
 from django import forms
 from django.contrib.auth.forms import UserChangeForm, AuthenticationForm, UserCreationForm
 from django import forms
+from .models import Profile
+from django.contrib.auth import get_user_model
+User = get_user_model()
 
+class UserEditForm(UserChangeForm):
+    """Форма редактирования профиля (без пароля)"""
+    class Meta:
+        model = User
+        fields = ('username', 'email', 'first_name', 'last_name')
+        # Убираем password на уровне Meta, а не через del в __init__
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # На всякий случай оставляем проверку, но при правильном Meta она не сработает
+        if 'password' in self.fields:
+            del self.fields['password']
+
+
+class ProfileEditForm(forms.ModelForm):
+    class Meta:
+        model = Profile
+        fields = ('avatar', 'bio')
+        widgets = {
+            'bio': forms.Textarea(attrs={'rows': 3, 'class': 'form-control'}),
+            'avatar': forms.FileInput(attrs={'class': 'form-control', 'accept': 'image/*'}),
+        }
 class AddCardForm(forms.Form):
     # Поля формы, но они НЕ соответствуют полям модели напрямую
     card_number = forms.CharField(
@@ -39,18 +64,6 @@ class CustomAuthenticationForm(AuthenticationForm):
         self.fields['username'].widget.attrs.update({'class': 'form-control'})
         self.fields['password'].widget.attrs.update({'class': 'form-control'})
 
-
-class UserEditForm(UserChangeForm):
-    """Форма редактирования профиля (без пароля)"""
-    class Meta:
-        from django.contrib.auth import get_user_model
-        model = get_user_model()
-        fields = ('username', 'email', 'first_name', 'last_name')  # Убрали avatar/bio, т.к. их нет у стандартного User
-        
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        if 'password' in self.fields:
-            del self.fields['password']
 
 
 class CustomUserCreationForm(UserCreationForm):
