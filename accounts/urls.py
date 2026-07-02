@@ -12,8 +12,7 @@ urlpatterns = [
     path('register/', views.register_view, name='register'),
     path('settings/', views.settings_view, name='settings'),
 
-    # Заказы, избранное, адреса, способы оплаты
-    path('orders/', views.orders_view, name='orders'),
+
 
     path('addresses/<int:pk>/delete/', views.delete_address, name='delete_address'),
     path('addresses/', views.profile_addresses, name='profile_addresses'),  # <-- только этот путь для списка

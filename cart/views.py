@@ -143,4 +143,4 @@ def cart_ajax(request):
             'html': '<span>Корзина пуста</span>'
         }
 
-    return JsonResponse(data)
+    return JsonResponse(data)          

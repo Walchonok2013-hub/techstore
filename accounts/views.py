@@ -23,6 +23,12 @@ from products.models import Product
 from django.db.models import Sum, Avg, Count
 from .models import PaymentMethod
 from .forms import AddCardForm
+import logging
+
+logger = logging.getLogger(__name__)
+
+
+
 @login_required
 def toggle_favorite_ajax(request, product_id):
     # 1. Находим товар (если нет - вернет 404)
@@ -54,13 +60,7 @@ def toggle_favorite_ajax(request, product_id):
         'count': count,  # Это число JS использует для обновления счетчика в шапке
     })
 
-@login_required
-def orders_view(request):
-    orders = Order.objects.filter(user=request.user).order_by('-created_at')
-    context = {
-        'orders': orders,
-    }
-    return render(request, 'accounts/orders.html', context)
+
 @login_required
 def profile(request):
     # Используем данные напрямую из request.user
@@ -152,15 +152,7 @@ def create_address(request):
         return redirect('accounts:profile_addresses')
 
     return render(request, 'accounts/create_address.html')
-#@login_required
-# def user_favorites(request):
-#     # Получаем избранные товары пользователя с предварительной загрузкой связанных товаров
-#     favorites = Favorite.objects.filter(user=request.user).select_related('product')
-#     context = {
-#         'favorites': favorites,
-#         'title': 'Мои избранные товары'
-#     }
-#     return render(request, 'accounts/favorites.html', context)
+
 @login_required
 def user_favorites(request):
     # 1. Получаем избранные товары пользователя с предварительной загрузкой связанных товаров
@@ -205,15 +197,7 @@ def delete_card(request, pk):
     card.delete()
     
     return redirect('cards_list')
-# @login_required
-# def delete_card(request, pk):
-#     # Проверяем, что карта принадлежит текущему пользователю
-#     card = get_object_or_404(PaymentMethod, pk=pk, user=request.user)
-#     if request.method == 'POST':
-#         card.delete()
-#         return redirect('cards_list')
-#     # Если зашли не через POST (например, по прямой ссылке), просто возвращаем в список
-#     return redirect('cards_list')
+
 
 
 @login_required
@@ -249,11 +233,9 @@ def login_view(request):
             next_url = request.POST.get('next')
             if next_url:
                 return redirect(next_url)
-            return redirect('products:home') # Или другое имя вашего главного URL
+            return redirect('products:home')
         
-        # Если форма невалидна, мы просто рендерим её снова.
-        # Ошибки уже внутри form.errors и отобразятся в шаблоне.
-        # НЕ добавляйте здесь messages.error с общим текстом, это скроет реальные ошибки.
+
     else:
         form = AuthenticationForm()
     
@@ -339,7 +321,7 @@ def register_view(request):
             login(request, user)
             return redirect('products:home')
     else:
-        # Исправляем здесь: создаем CustomUserCreationForm, а не UserCreationForm
+      
         form = CustomUserCreationForm()
     return render(request, 'accounts/register.html', {'form': form})
 
@@ -381,31 +363,13 @@ def edit_profile(request):
 def settings_view(request):
     return render(request, 'accounts/settings.html')
 
-@login_required
-def orders_view(request):
-    orders = Order.objects.filter(user=request.user).order_by('-created_at')  # Исправлено: order_by → order_by
-    return render(request, 'accounts/orders.html', {'orders': orders})
-
-@login_required
-def wishlist_view(request):
-    wishlist_items = WishlistItem.objects.filter(user=request.user)
-    return render(request, 'accounts/wishlist.html', {'wishlist_items': wishlist_items})
 
 @login_required
 def addresses_view(request):
     addresses = Address.objects.filter(user=request.user)
     return render(request, 'accounts/addresses.html', {'addresses': addresses})
 
-# @login_required
-# @require_POST
-# def delete_card(request, card_id):
-#     try:
-#         # Удаляем только карту текущего пользователя
-#         card = PaymentMethod.objects.get(id=card_id, user=request.user)
-#         card.delete()
-#         return JsonResponse({'status': 'ok'})
-#     except PaymentMethod.DoesNotExist:
-#         return JsonResponse({'status': 'error', 'message': 'Карта не найдена или не принадлежит вам'}, status=404)
+
     
 def get_default_user_id(apps, schema_editor):
     User = apps.get_model(settings.AUTH_USER_MODEL.split('.')[0], 'User')
@@ -421,7 +385,7 @@ def get_default_user_id(apps, schema_editor):
         )
         return user.id  
     
-# from favorites.models import Favorite
+
 
 
 @login_required

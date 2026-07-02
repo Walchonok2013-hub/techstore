@@ -1,0 +1,63 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Оплата картой{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <h2>Оплата заказа №{{ order.id }}</h2>
+    
+    <div class="card mb-3">
+        <div class="card-body">
+            <p><strong>Сумма к оплате:</strong> {{ order.total_price }} ₽</p>
+            <p><strong>Статус заказа:</strong> {{ order.get_status_display }}</p>
+        </div>
+    </div>
+
+    <div class="alert alert-info">
+        <strong>Внимание:</strong> Это тестовая страница. Здесь должна быть форма ввода данных карты 
+        и интеграция с платежным шлюзом (YooKassa, CloudPayments и т.д.).
+    </div>
+
+<a href="{% url 'orders:payment_success' order.id %}" class="btn btn-success">
+    Имитировать успешную оплату (Тест)
+</a>
+    
+    <a href="{% url 'cart:cart_detail' %}" class="btn btn-secondary">Вернуться в корзину</a>
+</div>
+{% endblock %}
+
+
+{% comment %} {% extends "base.html" %}
+
+{% block title %}Оплата картой{% endblock %}
+
+{% block content %}
+<div class="container my-4">    
+  <h1 class="mb-4">Оплата заказа</h1>
+  <div class="alert alert-warning">
+    ⚠️ Внимание: В реальном проекте эта форма не должна принимать данные карты. 
+    Здесь должна быть кнопка «Оплатить через шлюз», которая перенаправляет пользователя на сайт банка.
+  </div>
+
+  <div class="card">
+    <div class="card-body">
+      <h5>Переход к оплате</h5>
+      <p>Вы будете перенаправлены на защищённую страницу банка для ввода данных карты.</p>
+      
+      <!-- ПРИМЕР: Редирект на шлюз -->
+      <!-- В реальности тут будет форма, которая POST-ит данные на адрес шлюза -->
+      <form action="https://secure.payment-gateway.com/pay" method="POST">
+        <!-- Эти поля обычно генерируются на бэкенде с цифровой подписью -->
+        <input type="hidden" name="order_id" value="{{ order.id }}"> 
+        <input type="hidden" name="amount" value="{{ order.total }}">
+        <input type="hidden" name="currency" value="RUB">
+        
+        <button type="submit" class="btn btn-success">Перейти к оплате картой</button>
+      </form>
+
+      <a href="{% url 'orders:payment_choice' %}" class="btn btn-secondary mt-3">Выбрать другой способ</a>
+    </div>
+  </div>
+</div>
+{% endblock %} {% endcomment %}

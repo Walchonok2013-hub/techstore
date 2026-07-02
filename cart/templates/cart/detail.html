@@ -39,31 +39,29 @@
             </div>
         </div>
     </td>
-    <td>
-        <div class="d-flex align-items-center">
-            <!-- Кнопка уменьшения количества -->
-            <form action="{% url 'cart:cart_remove_item' item.product.id %}" method="post" class="d-inline">
-                {% csrf_token %}
-                <input type="hidden" name="quantity" value="1">
-                <button type="submit" class="btn btn-sm btn-outline-secondary me-2"
-                        {% if item.quantity <= 1 %}disabled{% endif %}>
-                    −
-                </button>
-            </form>
+<td>
+    <div class="d-flex align-items-center">
+        <!-- Уменьшить -->
+        <form action="{% url 'cart:cart_remove_item' item.product.id %}" method="post" class="d-inline">
+            {% csrf_token %}
+          <input type="hidden" name="quantity" value="1"> 
+            <button type="submit" class="btn btn-sm btn-outline-secondary me-2"
+                    {% if item.quantity <= 1 %}disabled{% endif %}>
+                −
+            </button>
+        </form>
 
-            <!-- Отображаемое количество -->
-            <span class="me-2">{{ item.quantity }}</span>
+        <span class="me-2">{{ item.quantity }}</span>
 
-            <!-- Кнопка увеличения количества -->
-            <form action="{% url 'cart:cart_add' item.product.id %}" method="post" class="d-inline">
-                {% csrf_token %}
-                <input type="hidden" name="quantity" value="1">
-                <button type="submit" class="btn btn-sm btn-outline-primary">
-                    +
-                </button>
-            </form>
-        </div>
-    </td>
+      
+        <form action="{% url 'cart:cart_add' item.product.id %}" method="post" class="d-inline">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-sm btn-outline-primary">
+                +
+            </button>
+        </form>
+    </div>
+</td>
     <td>{{ item.price }} руб.</td>
     <td>{{ item.total_price }} руб.</td>
     <td>

@@ -5,15 +5,13 @@
 {% block title %}Оформление заказа{% endblock %}
 
 {% block content %}
-
-
 <div class="container my-4">
   <h1 class="mb-4">Оформление заказа</h1>
 
   <div class="row">
+    <!-- Левая колонка: Форма -->
     <div class="col-md-8">
-      <!-- ОСНОВНАЯ ФОРМА: Убрали вложенность, добавили action -->
-      <form method="post" action="{% url 'orders:payment' %}">
+      <form method="post" action="{% url 'orders:order_create' %}">
         {% csrf_token %}
 
         <div class="card mb-4">
@@ -42,7 +40,6 @@
               </div>
               <div class="col-md-6">
                 <label for="{{ form.phone.id_for_label }}" class="form-label">Телефон</label>
-               
                 {{ form.phone }}
                 {{ form.phone.errors }}
               </div>
@@ -62,37 +59,42 @@
           </div>
         </div>
 
-        <!-- Кнопка отправки теперь работает с правильным action -->
         <button type="submit" class="btn btn-primary">Подтвердить заказ</button>
-
         <a href="{% url 'cart:cart_detail' %}" class="btn btn-secondary">Вернуться в корзину</a>
       </form>
     </div>
 
+    <!-- Правая колонка: Товары -->
     <div class="col-md-4">
       <div class="card">
-        <div class="card-header">
-          <h5>Ваш заказ</h5>
+        <div class="card-header bg-light">
+          <h5>Товары в заказе</h5>
         </div>
         <div class="card-body">
-          {% for item in cart.items.all %}
-          <div class="d-flex justify-content-between mb-2">
-            <span>{{ item.product.name }}</span>
-            <span>{{ item.quantity }} × {{ item.product.price }} руб.</span>
-          </div>
-          {% endfor %}
+          <ul class="list-unstyled">
+            <!-- ИСПРАВЛЕНО: итерируемся по cart, а не по cart.items.all -->
+            {% for item in cart %}
+              <li class="d-flex justify-content-between mb-2">
+                <div>
+                  <strong>{{ item.product.name }}</strong>
+                  <small class="text-muted">x {{ item.quantity }}</small>
+                </div>
+                <span>{{ item.total_price }} ₽</span>
+              </li>
+            {% empty %}
+              <li>В корзине нет товаров</li>
+            {% endfor %}
+          </ul>
+          
           <hr>
-          <div class="d-flex justify-content-between">
-            <strong>Итого:</strong>
-            <strong>{{ cart.get_total_price }} руб.</strong>
+          
+          <div class="d-flex justify-content-between align-items-center">
+            <h5>Итого:</h5>
+            <h5 class="text-primary">{{ cart.get_total_price }} ₽</h5>
           </div>
         </div>
       </div>
     </div>
   </div>
 </div>
-
-
-
 {% endblock %}
-

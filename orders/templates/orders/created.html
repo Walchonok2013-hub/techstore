@@ -20,7 +20,7 @@
             <p><strong>Статус:</strong> Ожидает подтверждения</p>
 
             {% if order.total_cost %}
-                <p><strong>Общая сумма:</strong> {{ order.total_cost }} руб.</p>
+                <p><strong>Общая сумма:</strong> {{ order.get_total_cost }} руб.</p>
             {% endif %}
         </div>
     </div>

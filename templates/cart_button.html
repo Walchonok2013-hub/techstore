@@ -31,3 +31,41 @@
         </div>
     </div>
 </div>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const cartModal = document.getElementById('cartModal');
+    const cartContent = document.getElementById('cartContent');
+    const cartCountSpan = document.getElementById('goodsInCartCount');
+
+    if (!cartModal || !cartContent) return;
+
+    // Слушаем событие открытия модального окна Bootstrap
+    cartModal.addEventListener('show.bs.modal', (event) => {
+        // Блокируем кнопку, чтобы не было дублей запросов
+        const triggerBtn = event.relatedTarget;
+        const originalText = triggerBtn.innerHTML;
+        triggerBtn.disabled = true;
+        triggerBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Загрузка...';
+
+        // AJAX-запрос к представлению, которое отдаёт HTML корзины
+        fetch('/cart/modal/') // <-- ВАЖНО: укажи здесь правильный URL твоего view
+            .then(response => {
+                if (!response.ok) throw new Error('Ошибка сети');
+                return response.text();
+            })
+            .then(html => {
+                cartContent.innerHTML = html;
+                // Опционально: можно обновить счётчик, если view вернёт JSON с count
+            })
+            .catch(error => {
+                console.error('Ошибка загрузки корзины:', error);
+                cartContent.innerHTML = '<div class="alert alert-danger">Не удалось загрузить корзину. Обновите страницу.</div>';
+            })
+            .finally(() => {
+                // Возвращаем кнопку в исходное состояние
+                triggerBtn.disabled = false;
+                triggerBtn.innerHTML = originalText;
+            });
+    });
+});
+</script>

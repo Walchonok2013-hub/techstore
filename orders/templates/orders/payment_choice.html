@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+
+{% block title %}Выбор способа оплаты{% endblock %}
+
+{% block content %}
+<div class="container my-5">
+  <h1 class="mb-4">Способ оплаты</h1>
+  <!-- НОВЫЙ БЛОК: Сводка заказа -->
+  <div class="card mb-4 shadow-sm">
+    <div class="card-header bg-light">
+      <strong>Состав вашего заказа #{{ order.id }}</strong>
+    </div>
+    <ul class="list-group list-group-flush">
+
+      {% for item in order_items %}
+        <li class="list-group-item d-flex justify-content-between align-items-center">
+          <div>
+            <strong>{{ item.product.name }}</strong><br>
+            <small class="text-muted">
+              {{ item.quantity }} шт. × {{ item.price|floatformat:2 }} ₽
+            </small>
+          </div>
+
+<h4>Товары в заказе #{{ order.id }}</h4>
+{% endfor %} 
+<ul>
+    {% for item in order_items %}
+        <li>{{ item.product.name }} x {{ item.quantity }} ({{ item.get_cost }} ₽)</li>
+    {% empty %}
+        <li>В заказе нет товаров</li>
+    {% endfor %}
+</ul>
+<p><b>Итого: {{ order.total_price }} ₽</b></p>
+     
+    </div>
+  </div>  
+  <div class="row">
+    <!-- Вариант 1: При получении (Самый простой и частый для РФ) -->
+    <div class="col-md-6 mb-4">
+      <div class="card h-100 border-success">
+        <div class="card-header bg-success text-white">
+          <h5 class="mb-0">При получении</h5>
+        </div>
+        <div class="card-body">
+          <p class="text-muted">Оплатите курьеру или в пункте выдачи после проверки товара.</p>
+          <ul class="list-unstyled text-small">
+            <li>✅ Без ввода данных карты</li>
+            <li>✅ Можно отказаться от товара</li>
+            <li>✅ Удобно для первого заказа</li>
+          </ul>
+        </div>
+        <div class="card-footer bg-white border-0">
+        <form action="{% url 'orders:payment_choice' order.id %}" method="POST">
+            {% csrf_token %}
+            <input type="hidden" name="payment_method" value="cash">
+            <button type="submit" class="btn btn-success w-100">Выбрать: При получении</button>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- Вариант 2: Банковской картой -->
+    <div class="col-md-6 mb-4">
+      <div class="card h-100">
+        <div class="card-header">
+          <h5 class="mb-0">Банковской картой онлайн</h5>
+        </div>
+        <div class="card-body">
+          <p class="text-muted">Безопасная оплата через платежный шлюз.</p>
+          <ul class="list-unstyled text-small">
+            <li>🔒 Данные карты не хранятся на нашем сайте</li>
+            <li>💳 Мгновенное подтверждение</li>
+            <li>📄 Чек придет на email</li>
+          </ul>
+        </div>
+        <div class="card-footer bg-white border-0">
+  <a href="{% url 'cart:cart_detail' %}" class="btn btn-light">Вернуться в корзину</a>
+
+<form action="{% url 'orders:payment_choice' order.id %}" method="POST">
+            {% csrf_token %}
+            <input type="hidden" name="payment_method" value="card">
+            <button type="submit" class="btn btn-primary w-100">Выбрать: Картой онлайн</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+  <a href="{% url 'orders:order_create' %}" class="btn btn-light">Вернуться к оформлению</a>
+  <a href="{% url 'cart:cart_detail' %}" class="btn btn-light">Вернуться в корзину</a>
+</div>
+{% endblock %}
