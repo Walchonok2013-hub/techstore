@@ -20,14 +20,18 @@ from django.views.decorators.http import require_http_methods
 from .models import Favorite
 from orders.models import Order
 from products.models import Product
-from django.db.models import Sum, Avg, Count
+from django.db.models import Avg, Count
 from .models import PaymentMethod
 from .forms import AddCardForm
 import logging
 from .forms import CustomUserCreationForm
 from django.core.exceptions import ValidationError
 
+from django.shortcuts import render
 
+from django.db.models import Sum, Q
+from decimal import Decimal, ROUND_HALF_UP
+from orders.models import Order
 
 logger = logging.getLogger(__name__)
 
@@ -67,21 +71,127 @@ def toggle_favorite_ajax(request, product_id):
 
 @login_required
 def profile(request):
-    # Используем данные напрямую из request.user
-    orders = Order.objects.filter(user=request.user).order_by('-created_at')[:5]
+    # 1. Получаем профиль. get_or_create спасает от ошибки, если профиль не создан при регистрации.
+    profile, created = Profile.objects.get_or_create(user=request.user)
     
-    total_orders = orders.count()
-    total_spent = sum(order.total_price for order in orders)
-    average_check = total_spent / total_orders if total_orders else 0
+    # 2. Получаем заказы пользователя
+    user_orders = Order.objects.filter(user=request.user)
     
+    # --- Статистика заказов ---
+    total_orders = user_orders.count()
+    
+    # Сумма потраченного. aggregate всегда возвращает dict, даже если пусто.
+    spent_stats = user_orders.aggregate(total_spent=Sum('total_price'))
+    total_spent = spent_stats['total_spent'] or 0
+    
+    # Средний чек. Avg вернет None, если заказов нет.
+    avg_check_stats = user_orders.aggregate(average_check=Avg('total_price'))
+    average_check = avg_check_stats['average_check'] or 0
+    
+    # --- Расчет средней скидки (ИСПРАВЛЕННАЯ ЛОГИКА) ---
+    discount_stats = user_orders.aggregate(
+        total_discount=Sum('discount'),
+        total_original=Sum('original_total')
+    )
+    
+    total_discount = discount_stats['total_discount'] or 0
+    total_original = discount_stats['total_original'] or 0
+    
+    # ВАЖНО: Защита от деления на ноль и правильная логика 100% скидки
+    if total_original > 0:
+        average_discount_percent = (total_discount / total_original) * 100
+    else:
+        # Если оригинальная сумма 0 (например, все товары были бесплатны или промокоды),
+        # считаем скидку 100%, если были применены скидки, или 0%, если скидок не было.
+        # В большинстве случаев, если original_total=0, то и discount=0, тогда скидка 0%.
+        # Но если логика бизнеса требует иначе - поменяй условие.
+        average_discount_percent = 100.0 if total_discount > 0 else 0.0
+
+    # --- Подсчет избранного ---
+    # Вариант А: Если у тебя есть отдельная модель Favorite (Рекомендуемый)
+    # Раскомментируй эти строки, если модель Favorite существует:
+    # from favorites.models import Favorite
+    # favorites_count = Favorite.objects.filter(user=request.user).count()
+    
+    # Вариант Б: Если избранное хранится как M2M поле на модели Product
+    # Проверяем наличие атрибута, чтобы view не упал, если связи еще нет в БД
+    if hasattr(request.user, 'favorite_products'):
+        favorites_count = request.user.favorite_products.count()
+    else:
+        favorites_count = 0
+
+    # Последние 5 заказов для отображения в таблице (если решишь добавить)
+    recent_orders = user_orders.order_by('-created_at')[:5]
+
     context = {
-        'user': request.user,  # вместо profile
-        'orders': orders,
+        'profile': profile,
         'total_orders': total_orders,
+        'favorites_count': favorites_count,
         'total_spent': total_spent,
         'average_check': average_check,
+        'average_discount_percent': average_discount_percent,
+        'recent_orders': recent_orders,
+        'has_orders': total_orders > 0, # Удобно для шаблона, чтобы скрыть пустые блоки
     }
+    
     return render(request, 'accounts/profile.html', context)
+
+# @login_required
+# def profile(request):
+#     user = request.user
+#     # Получаем все заказы пользователя. Можно добавить фильтр .exclude(status='cancelled'), если нужно
+#     orders = Order.objects.filter(user=user)
+
+#     # 1. Считаем потрачено всего и количество заказов
+#     total_spent_data = orders.aggregate(total=Sum('total_price'))
+#     total_spent = total_spent_data['total'] or Decimal('0.00')
+#     total_orders = orders.count()
+
+#     # 2. Считаем средний чек
+#     average_check = (
+#         (total_spent / total_orders).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+#         if total_orders else Decimal('0.00')
+#     )
+
+#     # 3. Считаем среднюю скидку (ПРАВИЛЬНЫЙ СПОСОБ)
+#     # Нам нужно посчитать процент скидки для КАЖДОГО заказа, а потом найти среднее
+#     discount_percentages = []
+    
+#     for order in orders:
+#         # Защита от деления на ноль, если original_total вдруг 0
+#         if order.original_total and order.original_total > 0:
+#             percent = (order.discount / order.original_total) * Decimal('100')
+#             discount_percentages.append(percent)
+    
+#     if discount_percentages:
+#         # Суммируем все проценты и делим на количество заказов
+#         sum_percent = sum(discount_percentages)
+#         average_discount_percent = (
+#             (sum_percent / len(discount_percentages)).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+#         )
+#     else:
+#         average_discount_percent = Decimal('0.00')
+
+#     # 4. Считаем количество избранного (нужно добавить импорт модели Favorite)
+#     # Если у тебя нет модели Favorite, поставь 0 или закомментируй эту строку
+#     try:
+#         from .models import Favorite
+#         favorites_count = Favorite.objects.filter(user=user).count()
+#     except ImportError:
+#         favorites_count = 0
+
+#     context = {
+#         'user_profile': user,
+#         'total_spent': total_spent,
+#         'orders_count': total_orders,          # В шаблоне используй orders_count, а не total_orders
+#         'favorites_count': favorites_count,    # Передаем в шаблон
+#         'average_check': average_check,
+#         'average_discount_percent': average_discount_percent,
+#         'orders': orders[:5]                   # Передаем сами заказы для списка внизу
+#     }
+    
+#     return render(request, 'profile.html', context)
+
 @login_required
 def edit_address(request, address_id):
     # Получаем адрес или возвращаем 404, если его нет
@@ -188,7 +298,10 @@ def user_favorites(request):
 def cards_list(request):
     cards = PaymentMethod.objects.filter(user=request.user)
     return render(request, 'accounts/cards_list.html', {'cards': cards})
-
+@login_required
+def order_list(request):
+    orders = Order.objects.filter(user=request.user)
+    return render(request, 'orders/list.html', {'orders': orders})
 @login_required
 def add_card(request):
     if request.method == 'POST':

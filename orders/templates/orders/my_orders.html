@@ -1,131 +1,64 @@
-{% extends "base.html" %}
-
-{% block title %}Мои заказы{% endblock %}
+{% extends 'base.html' %}
 
 {% block content %}
-<div class="container my-5">
-  <h2 class="mb-4">Мои заказы</h2>
+<h2>Мои заказы</h2>
 
-  {% if orders %}
+{% if orders %}
     {% for order in orders %}
-      <!-- Начало карточки заказа -->
-      <div class="card mb-4 shadow-sm">
-        
-        <!-- Шапка карточки: номер, статус, кнопка отмены -->
-        <div class="card-header d-flex justify-content-between align-items-center">
-          <div>
-            <span class="fw-bold">Заказ №{{ order.id }}</span>
-            
-            <!-- Бейдж статуса -->
-            <span class="badge ms-2 
-              {% if order.status == 'new' or order.status == 'pending' %}bg-warning text-dark{% endif %}
-              {% if order.status == 'confirmed' %}bg-success{% endif %}
-              {% if order.status == 'shipped' %}bg-info{% endif %}
-              {% if order.status == 'completed' %}bg-secondary{% endif %}
-              {% if order.status == 'cancelled' %}bg-danger{% endif %}
-            ">
-              {% if order.status == 'new' or order.status == 'pending' %}Новый / В обработке{% endif %}
-              {% if order.status == 'confirmed' %}Подтверждён{% endif %}
-              {% if order.status == 'shipped' %}Отправлен{% endif %}
-              {% if order.status == 'completed' %}Завершён{% endif %}
-              {% if order.status == 'cancelled' %}Отменён{% endif %}
-            </span>
-          </div>
-
-          <!-- Кнопка отмены: видна только для статусов new и pending -->
-          {% if order.status == 'new' or order.status == 'pending' %}
-            <button type="button" 
-                    class="btn btn-sm btn-outline-danger" 
-                    data-bs-toggle="modal" 
-                    data-bs-target="#cancelOrderModal{{ order.id }}">
-              Отменить заказ
-            </button>
-          {% endif %}
-        </div>
-
-        <!-- МОДАЛЬНОЕ ОКНО (строго ВНУТРИ карточки, перед body) -->
-        <div class="modal fade" id="cancelOrderModal{{ order.id }}" tabindex="-1" aria-labelledby="modalLabel{{ order.id }}" aria-hidden="true">
-          <div class="modal-dialog">
-            <div class="modal-content">
-              <div class="modal-header">
-                <h5 class="modal-title" id="modalLabel{{ order.id }}">Подтверждение отмены</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-              </div>
-              <div class="modal-body">
-                <p>Вы уверены, что хотите отменить заказ <strong>#{{ order.id }}</strong>?</p>
-                <p class="text-muted small">Стоимость заказа: {{ order.get_total_cost|floatformat:0 }} ₽</p>
-                <p class="text-danger fw-bold">После отмены восстановить заказ будет невозможно.</p>
-              </div>
-              <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
-                <a href="{% url 'orders:cancel_order' order.id %}" class="btn btn-danger">Подтвердить отмену</a>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Тело карточки (теперь оно ВНУТРИ карточки, а не снаружи!) -->
-        <div class="card-body">
-          <div class="row">
-            <div class="col-md-6">
-              <p><strong>Дата:</strong> {{ order.created_at|date:"d.m.Y H:i" }}</p>
-            </div>
-
-<div class="col-md-6 text-end">
-  <p><strong>Сумма:</strong> {{ order.get_total_cost|floatformat:0 }} ₽</p>
-  
-  <!-- Получаем объект платежа через обратную связь -->
-  {% with payment=order.payment_set.first %}
-    <p><strong>Способ оплаты:</strong> 
-      {% if payment %}
-        <!-- Выводим красивое название из choices -->
-        {{ payment.get_payment_method_display }}
-      {% else %}
-        <!-- Если платежа нет, ставим дефолт -->
-        При получении
-      {% endif %}
-    </p>
-    
-  {% endwith %}
-</div>
-
-          <hr>
-
-          <h5>Состав заказа:</h5>
-          <ul class="list-group list-group-flush">
-            {% for item in order.items.all %}
-              <li class="list-group-item d-flex justify-content-between align-items-center">
-                <div>
-                  <div class="fw-bold">{{ item.product.name }}</div>
-                  <small class="text-muted">{{ item.quantity }} × {{ item.price }} ₽</small>
+        <div class="card mb-4 shadow-sm border-0">
+            <!-- ИЗМЕНЕННАЯ ВЕРХНЯЯ ЧАСТЬ (HEADER) -->
+            <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+                <div class="d-flex align-items-center gap-3">
+                    <h5 class="mb-0 fw-bold text-dark">Заказ №{{ order.id }}</h5>
+                    
+                    <!-- Бейдж статуса (для наглядности) -->
+                    <span class="badge {% if order.status == 'cancelled' %}bg-danger{% elif order.status == 'paid' %}bg-success{% else %}bg-warning text-dark{% endif %}">
+                        {{ order.get_status_display }}
+                    </span>
                 </div>
-                <span class="fw-bold text-success">{{ item.get_cost }} ₽</span>
-              </li>
-            {% empty %}
-              <li class="list-group-item text-muted">Товары не найдены</li>
-            {% endfor %}
-          </ul>
 
-          <div class="mt-3 d-flex justify-content-between fw-bold border-top pt-3">
-            <span>Итого к оплате:</span>
-            <span class="fw-bold text-primary">{{ order.get_total_cost|floatformat:0 }} ₽</span>
-          </div>
-        </div>
-      </div> 
-      <!-- Конец карточки заказа -->
-      {% if order.status == 'new' or order.status == 'pending' %}
-        <div class="mt-4 text-end">
-          <a href="{% url 'orders:payment_choice' order.id %}" class="btn btn-primary btn-lg">
-            Перейти к оплате
-          </a>
-        </div>
-      {% endif %}
-       </div> 
-    {% endfor %}
-  {% else %}
-    <div class="alert alert-info">
-      У вас пока нет оформленных заказов.
+                <!-- КНОПКА ОТМЕНЫ: теперь она справа -->
+                {% if order.status == 'new' or order.status == 'pending' %}
+                    <a href="{% url 'orders:cancel_order' order.id %}" 
+                       class="btn btn-outline-danger btn-sm px-3"
+                       onclick="return confirm('Вы уверены, что хотите отменить заказ №{{ order.id }}? Это действие нельзя отменить.');">
+                        Отменить заказ
+                    </a>
+                {% else %}
+                    <button type="button" class="btn btn-sm btn-secondary px-3" disabled>
+                        Отмена недоступна
+                    </button>
+                {% endif %}
+            </div>
+            <!-- КОНЕЦ ИЗМЕНЕННОЙ ЧАСТИ -->
+
+
+<div class="card-body">
+    <div class="d-flex justify-content-between mb-3">
+        <span><strong>Дата:</strong> {{ order.created|date:"d.m.Y H:i" }}</span>
+        <!-- ИСПРАВЛЕНИЕ: используем поле total_price вместо несуществующего метода -->
+        <span><strong>Сумма:</strong> {{ order.total_price|floatformat:2 }} ₽</span>
     </div>
-  {% endif %}
-</div>
+    
+    <h6 class="fw-bold mb-2">Состав заказа:</h6>
+    <ul class="list-unstyled mb-3">
+        {% for item in order.items.all %}
+            <li class="d-flex justify-content-between">
+                <span>{{ item.product.name }} x {{ item.quantity }}</span>
+                <!-- Тут можно оставить item.get_cost, если он есть в модели OrderItem, 
+                     либо тоже заменить на расчет: item.price * item.quantity -->
+                <span>{{ item.get_cost|floatformat:2 }} ₽</span>
+            </li>
+        {% endfor %}
+    </ul>
+
+                <a href="{% url 'orders:order_detail_user' order.id %}" class="btn btn-outline-primary btn-sm">
+                    Детали заказа
+                </a>
+            </div>
+        </div>
+    {% endfor %}
+{% else %}
+    <p class="text-muted">У вас пока нет заказов.</p>
+{% endif %}
 {% endblock %}

@@ -1,22 +1,207 @@
 {% extends 'base.html' %}
 
 {% block content %}
-<div class="container mt-4">
-    <h2>Детали заказа #{{ order.id }}</h2>
-    
-    <p><strong>Статус:</strong> {{ order.status|default:"Не указан" }}</p>
-    <p><strong>Дата создания:</strong> {{ order.created_at }}</p>
-    <p><strong>Итого:</strong> {{ order.total_price }} ₽</p>
+<style>
+    .order-card {
+        max-width: 600px;
+        margin: 2rem auto;
+        padding: 2rem;
+        background: #ffffff;
+        border-radius: 16px; /* Чуть сильнее скругление */
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05); /* Мягкая тень */
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        color: #333;
+    }
 
-    <h4>Товары в заказе:</h4>
-    <ul>
+    .order-title {
+        margin-top: 0;
+        color: #1a1a1a;
+        font-size: 1.5rem;
+        margin-bottom: 1.5rem;
+        font-weight: 700;
+    }
+
+    .order-info-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1.5rem 2rem;
+        margin-bottom: 2rem;
+    }
+
+    .info-item {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .info-label {
+        font-size: 0.85rem;
+        color: #888;
+        margin-bottom: 0.4rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .info-value {
+        font-weight: 500;
+        color: #222;
+    }
+
+    /* --- СТИЛИ ДЛЯ СТАТУСА (БЕЙДЖ) --- */
+    .status-badge {
+        display: inline-block;
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-size: 0.85rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .status-new { background-color: #e7f1ff; color: #0056b3; }
+    .status-processing { background-color: #fff8e1; color: #856404; }
+    .status-delivered { background-color: #d4edda; color: #155724; }
+    .status-cancelled { background-color: #f8d7da; color: #721c24; }
+    .status-refunded { background-color: #e2e3e5; color: #383d41; }
+
+    .total-row {
+        grid-column: 1 / -1;
+        padding-top: 1rem;
+        border-top: 1px solid #f0f0f0;
+    }
+
+    .value-total {
+        font-size: 1.4rem;
+        color: #1a1a1a;
+        font-weight: 700;
+    }
+
+    .section-title {
+        margin-top: 0;
+        margin-bottom: 1.2rem;
+        color: #444;
+        font-size: 1.1rem;
+        font-weight: 600;
+    }
+
+    .items-list {
+        list-style: none;
+        padding: 0;
+        margin: 0 0 2rem 0;
+    }
+
+    .item-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        padding: 1rem 0;
+        border-bottom: 1px solid #f5f5f5;
+    }
+
+    .item-row:last-child {
+        border-bottom: none;
+    }
+
+    .item-details {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .item-name {
+        font-weight: 600;
+        color: #222;
+        margin-bottom: 0.2rem;
+        line-height: 1.3;
+    }
+
+    .item-qty {
+        font-size: 0.85rem;
+        color: #888;
+    }
+
+    .item-price {
+        font-weight: 700;
+        color: #1a1a1a;
+        white-space: nowrap;
+        min-width: 100px;
+        text-align: right;
+    }
+
+    .empty-state {
+        color: #999;
+        font-style: italic;
+        padding: 1rem;
+    }
+
+    /* --- УЛУЧШЕННАЯ КНОПКА --- */
+    .btn-back {
+        display: inline-block;
+        padding: 12px 24px;
+        background-color: #007bff; /* Яркий синий вместо серого */
+        color: #fff;
+        text-decoration: none;
+        border-radius: 8px;
+        font-weight: 600;
+        font-size: 0.95rem;
+        transition: all 0.2s ease;
+        box-shadow: 0 2px 4px rgba(0, 123, 255, 0.2);
+    }
+
+    .btn-back:hover {
+        background-color: #0056b3;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 8px rgba(0, 123, 255, 0.3);
+    }
+    
+    /* Вариант кнопки-обводки, если не хочешь сплошной цвет:
+    .btn-back {
+        background-color: transparent;
+        border: 1px solid #ccc;
+        color: #333;
+    }
+    .btn-back:hover {
+        border-color: #007bff;
+        color: #007bff;
+    }
+    */
+</style>
+
+<div class="order-card">
+    <h2 class="order-title">Детали заказа #{{ order.id }}</h2>
+    
+    <div class="order-info-grid">
+        <div class="info-item">
+            <span class="info-label">Статус:</span>
+            <!-- Теперь это будет цветной бейдж -->
+            <span class="status-badge status-{{ order.status }}">
+                {{ order.get_status_display|default:"Не указан" }}
+            </span>
+        </div>
+        <div class="info-item">
+            <span class="info-label">Дата создания:</span>
+            <span class="info-value">{{ order.created_at|date:"d.m.Y H:i" }}</span>
+        </div>
+        <div class="info-item total-row">
+            <span class="info-label">Итого:</span>
+            <span class="info-value value-total">{{ order.total_price|floatformat:2 }} ₽</span>
+        </div>
+    </div>
+
+    <h3 class="section-title">Товары в заказе:</h3>
+    
+    <ul class="items-list">
         {% for item in order.items.all %}
-            <li>{{ item.product.name }} x {{ item.quantity }} шт. — {{ item.get_cost }} ₽</li>
+            <li class="item-row">
+                <div class="item-details">
+                    <span class="item-name">{{ item.product.name }}</span>
+                    <span class="item-qty">x {{ item.quantity }} шт.</span>
+                </div>
+                <span class="item-price">{{ item.get_cost|floatformat:2 }} ₽</span>
+            </li>
         {% empty %}
-            <li>В заказе нет товаров.</li>
+            <li class="empty-state">В заказе нет товаров.</li>
         {% endfor %}
     </ul>
 
-    <a href="{% url 'orders:my_orders' %}" class="btn btn-secondary">Назад к моим заказам</a>
+    <a href="{% url 'orders:my_orders' %}" class="btn-back">Назад к моим заказам</a>
 </div>
 {% endblock %}

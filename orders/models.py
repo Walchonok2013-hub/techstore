@@ -2,6 +2,9 @@
 from django.db import models
 from django.conf import settings
 from products.models import Product
+from decimal import Decimal
+import calendar
+from django.utils import timezone
 
 STATUS_CHOICES = [
     ('new', 'Новый'),
@@ -11,6 +14,11 @@ STATUS_CHOICES = [
     ('completed', 'Завершён'),
     ('cancelled', 'Отменён'),
     ('paid', 'Оплачен'),
+]
+
+PAYMENT_TYPE_CHOICES = [
+    ('card', 'Банковская карта'),
+    ('cash', 'При получении'),
 ]
 
 class Order(models.Model):
@@ -30,8 +38,11 @@ class Order(models.Model):
     notes = models.TextField('Примечания к заказу', blank=True, null=True)
     
     created_at = models.DateTimeField('Создан', auto_now_add=True)
-    original_total = models.DecimalField('Полная стоимость', max_digits=10, decimal_places=2, default=0)
-    total_price = models.DecimalField('Итого', max_digits=10, decimal_places=2, default=0)
+    
+    # Эти поля хранят итоговые суммы
+    original_total = models.DecimalField('Полная стоимость', max_digits=10, decimal_places=2, default=Decimal('0'))
+    total_price = models.DecimalField('Итого', max_digits=10, decimal_places=2, default=Decimal('0'))
+    discount = models.DecimalField('Сумма скидки', max_digits=10, decimal_places=2, default=Decimal('0')) 
     
     status = models.CharField(
         'Статус', 
@@ -40,12 +51,34 @@ class Order(models.Model):
         default='new'
     )
 
-    discount = models.DecimalField(max_digits=10, decimal_places=2, default=0) 
+    # 👇 ЭТОГО ПОЛЯ НЕ ХВАТАЛО — ДОБАВЛЯЕМ ЕГО СЮДА 👇
+    payment_type = models.CharField(
+        'Способ оплаты',
+        max_length=20,
+        choices=PAYMENT_TYPE_CHOICES,
+        default='cash',
+        blank=True,
+        null=True
+    )
 
     def __str__(self):
-        # Это исправление решает ошибку AssertionError в тестах
         return f'Order #{self.id}'
 
+    def recalculate_totals(self):
+        total_original = Decimal('0')
+        total_discount = Decimal('0')
+        total_final = Decimal('0')
+
+        for item in self.items.all():
+            total_original += item.original_price * item.quantity
+            total_final += item.price * item.quantity
+            total_discount += (item.original_price - item.price) * item.quantity
+
+        self.original_total = total_original
+        self.discount = total_discount
+        self.total_price = total_final
+        self.save(update_fields=['original_total', 'discount', 'total_price'])
+        
 
 
 class OrderItem(models.Model):
@@ -60,11 +93,21 @@ class OrderItem(models.Model):
 
     quantity = models.PositiveIntegerField('Количество', default=1)
 
-    def __str__(self):
-        return f'{self.quantity} x {self.product.name}'
-
+    @property
+    def discount_amount(self):
+        return (self.original_price - self.price) * self.quantity
+    
+    @property
     def get_cost(self):
-        return self.price * self.quantity
+        return self.price * self.quantity 
+    
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+        
+        self.order.recalculate_totals()  
+
+    def __str__(self):
+        return f"{self.quantity} x {self.product.name}"
 
 
 class Payment(models.Model):

@@ -388,6 +388,22 @@
         </div>
     </div>
 </div>
+
+
+<!-- Скрипт форматирования чисел (в самом низу) -->
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        function formatNumber(num) {
+            return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, " ");
+        }
+
+        const spentElement = document.getElementById('total-spent-raw');
+        if (spentElement) {
+            const rawValue = spentElement.innerText;
+            spentElement.innerText = formatNumber(rawValue);
+        }
+    });
+</script>
 {% endblock %}
 
 
