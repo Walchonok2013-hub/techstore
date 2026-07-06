@@ -12,68 +12,133 @@ from .models import Order, OrderItem
 from cart.cart import Cart
 from .forms import OrderCreateForm
 
+
 logger = logging.getLogger(__name__)
 
 @login_required
 @transaction.atomic
 def order_create(request):
     cart = Cart(request)
-    if not cart:
+    
+    # Проверка: если корзина пуста, не даем оформлять заказ
+    if len(cart) == 0:
         return redirect('cart:cart_detail')
 
     if request.method == 'POST':
-        # Здесь должна быть валидация формы с данными доставки
-        # form = OrderCreateForm(request.POST) 
-        # if not form.is_valid(): ...
+        form = OrderCreateForm(request.POST)
         
-        # Создаем заказ, но НЕ сохраняем сразу, чтобы сначала посчитать суммы
-        order = Order.objects.create(
-            user=request.user if request.user.is_authenticated else None,
-            first_name=request.POST.get('first_name', ''),
-            last_name=request.POST.get('last_name', ''),
-            email=request.POST.get('email', ''),
-            phone=request.POST.get('phone', ''),
-            address=request.POST.get('address', ''),
-            status='new',  # Начальный статус
-            # total_price, original_total, discount пока 0, мы их пересчитаем ниже
-        )
+        # ЕДИНСТВЕННАЯ проверка, которую делает view
+        if form.is_valid():
+            # Если дошли сюда, значит все clean_<field> методы вернули данные без ошибок
+            order = form.save(commit=False)
+            order.user = request.user
+            order.status = 'new'
+            order.total_price = Decimal('0')
+            order.original_total = Decimal('0')
+            order.discount = Decimal('0')
+            order.save()
+            
+            total_price_sum = Decimal('0')
+            original_total_sum = Decimal('0')
 
-        total_price_sum = Decimal('0')
-        original_total_sum = Decimal('0')
+            for item in cart:
+                OrderItem.objects.create(
+                    order=order,
+                    product=item['product'],
+                    quantity=item['quantity'],
+                    price=item['price'],
+                    original_price=item['original_price']
+                )
+                total_price_sum += item['price'] * item['quantity']
+                original_total_sum += item['original_price'] * item['quantity']
 
-        # Проходимся по корзине и создаем позиции заказа
-        for item in cart:
-            product = item['product']
-            quantity = item['quantity']
-            price = item['price']              # Цена со скидкой (платит клиент)
-            original_price = item['original_price'] # Полная цена (до скидки)
+            order.total_price = total_price_sum
+            order.original_total = original_total_sum
+            order.discount = original_total_sum - total_price_sum
+            order.save(update_fields=['total_price', 'original_total', 'discount'])
 
-            OrderItem.objects.create(
-                order=order,
-                product=product,
-                quantity=quantity,
-                price=price,
-                original_price=original_price
-            )
-
-            total_price_sum += price * quantity
-            original_total_sum += original_price * quantity
-
-        # ГЛАВНОЕ: Пересчитываем итоговые поля заказа
-        order.total_price = total_price_sum
-        order.original_total = original_total_sum
-        order.discount = original_total_sum - total_price_sum
+            cart.clear()
+            return redirect('orders:order_created', order_id=order.id)
         
-        # Сохраняем обновленные суммы
-        order.save(update_fields=['total_price', 'original_total', 'discount'])
+        # Если form.is_valid() вернул False:
+        # Мы ничего не делаем, просто позволяем коду дойти до render() внизу.
+        # В объекте form уже есть все ошибки из методов clean_<field>.
 
-        # Очищаем корзину
-        cart.clear()
-
-        return redirect('orders:order_created', order_id=order.id)
     else:
         form = OrderCreateForm()
+
     return render(request, 'orders/create.html', {'cart': cart, 'form': form})
+# @login_required
+# @transaction.atomic
+# def order_create(request):
+#     cart = Cart(request)
+#     if not cart:
+#         return redirect('cart:cart_detail')
+
+#     if request.method == 'POST':
+#         # Здесь должна быть валидация формы с данными доставки
+#         # form = OrderCreateForm(request.POST) 
+#         # if not form.is_valid(): ...
+
+    
+
+#         form =OrderCreateForm (request.POST)
+#         if form.is_valid():
+#             # Сохраняем заказ
+#             order = form.save(commit=False)
+#             order.user = request.user
+#             order.total_price = cart.get_total_price()
+#             order.save()
+            
+       
+#         # Создаем заказ, но НЕ сохраняем сразу, чтобы сначала посчитать суммы
+#         order = Order.objects.create(
+#             user=request.user if request.user.is_authenticated else None,
+#             first_name=request.POST.get('first_name', ''),
+#             last_name=request.POST.get('last_name', ''),
+#             email=request.POST.get('email', ''),
+#             phone=request.POST.get('phone', ''),
+#             address=request.POST.get('address', ''),
+#             status='new',  # Начальный статус
+#             # total_price, original_total, discount пока 0, мы их пересчитаем ниже
+#         )
+
+#         total_price_sum = Decimal('0')
+#         original_total_sum = Decimal('0')
+
+#         # Проходимся по корзине и создаем позиции заказа
+#         for item in cart:
+#             product = item['product']
+#             quantity = item['quantity']
+#             price = item['price']              # Цена со скидкой (платит клиент)
+#             original_price = item['original_price'] # Полная цена (до скидки)
+
+#             OrderItem.objects.create(
+#                 order=order,
+#                 product=product,
+#                 quantity=quantity,
+#                 price=price,
+#                 original_price=original_price
+#             )
+
+#             total_price_sum += price * quantity
+#             original_total_sum += original_price * quantity
+
+#         # ГЛАВНОЕ: Пересчитываем итоговые поля заказа
+#         order.total_price = total_price_sum
+#         order.original_total = original_total_sum
+#         order.discount = original_total_sum - total_price_sum
+        
+#         # Сохраняем обновленные суммы
+#         order.save(update_fields=['total_price', 'original_total', 'discount'])
+
+#         # Очищаем корзину
+#         cart.clear()
+
+#         return redirect('orders:order_created', order_id=order.id)
+#     else:
+#         form = OrderCreateForm()
+#     return render(request, 'orders/create.html', {'cart': cart, 'form': form})
 
 @login_required
 def order_detail_user(request, order_id):

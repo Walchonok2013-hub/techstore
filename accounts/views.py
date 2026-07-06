@@ -25,6 +25,10 @@ from .models import PaymentMethod
 from .forms import AddCardForm
 import logging
 from .forms import CustomUserCreationForm
+from django.core.exceptions import ValidationError
+
+
+
 logger = logging.getLogger(__name__)
 
 
@@ -130,25 +134,37 @@ def delete_address(request, pk):
     return redirect('accounts:profile_addresses')
 @login_required
 def create_address(request):
+    schema = AddressSchema()
+
     if request.method == 'POST':
-        title = request.POST.get('title', '')
-        full_address = request.POST.get('full_address', '')
-        phone = request.POST.get('phone', '')
-        notes = request.POST.get('notes', '')
-        is_default = request.POST.get('is_default') == 'on'  # checkbox приходит как 'on' или отсутствует
+        data = {
+            'title': request.POST.get('title', ''),
+            'full_address': request.POST.get('full_address', ''),
+            'phone': request.POST.get('phone', ''),
+            'notes': request.POST.get('notes', ''),  # <-- берём из POST, если нет — пустая строка
+            'is_default': request.POST.get('is_default') == 'on',
+        }
 
-        # Если это первый адрес пользователя, можно сразу сделать его основным
+        try:
+            validated_data = schema.load(data)
+        except ValidationError as err:
+            return render(request, 'accounts/create_address.html', {
+                'errors': err.messages,
+                'form_data': data,
+            })
+
+        # Если notes не пришло (или пустое), явно ставим пустую строку
+        if 'notes' not in validated_data or validated_data['notes'] is None:
+            validated_data['notes'] = ''
+
         if not request.user.addresses.exists():
-            is_default = True
+            validated_data['is_default'] = True
 
-        address = Address.objects.create(
+        Address.objects.create(
             user=request.user,
-            title=title,
-            full_address=full_address,
-            phone=phone,
-            notes=notes,
-            is_default=is_default
+            **validated_data,
         )
+
         return redirect('accounts:profile_addresses')
 
     return render(request, 'accounts/create_address.html')
