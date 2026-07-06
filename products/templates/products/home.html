@@ -71,7 +71,11 @@
 <div class="alert alert-warning">
 <h4>Скидка 20 % на все смартфоны!</h4>
 <p>Только до конца месяца — покупайте смартфоны со скидкой 20 %.</p>
-<a href="#" class="btn btn-warning"style="background-color: #ffd752;">Смотреть смартфоны</a>
+
+
+<a href="{% url 'products:category_detail' 'smartfony-i-aksessuary' %}" class="btn btn-warning" style="background-color: #ffd752;">
+    Смотреть смартфоны
+</a>   
 </div>
     <!-- О нас -->
 <section class="about-us mb-5">

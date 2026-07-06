@@ -21,7 +21,7 @@
 
 from django.views.decorators.http import require_POST
 from django.views.decorators.csrf import csrf_exempt
-
+from cart.models import CartItem
 from accounts.models import Favorite
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
@@ -38,8 +38,10 @@ from django.http import JsonResponse
 from django.views.decorators.http import require_http_methods
 from django.contrib.auth.decorators import login_required
 from .models import Product
-from accounts.models import Favorite
 
+from .models import Product, Category, Promotion
+from accounts.models import Favorite
+from .services import get_active_promotion_for_category
 def search_view(request):
     query = request.GET.get('q', '')
     products = Product.objects.none()
@@ -236,13 +238,19 @@ def search(request):
         'products': products,
         'query': query
     })
-@require_POST
+@require_POST    
 @csrf_protect
 def add_to_cart(request):
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'message': 'Метод не разрешён'}, status=405)
+
     product_id = request.POST.get('product_id')
-    quantity = int(request.POST.get('quantity', 1))
-    if quantity < 1:
-        quantity = 1
+    try:
+        quantity = int(request.POST.get('quantity', 1))
+        if quantity < 1:
+            quantity = 1
+    except (ValueError, TypeError):
+        return JsonResponse({'success': False, 'message': 'Некорректное количество'}, status=400)
 
     try:
         product = Product.objects.get(id=product_id, is_active=True, available=True)
@@ -250,20 +258,73 @@ def add_to_cart(request):
         return JsonResponse({'success': False, 'message': 'Товар не найден'}, status=404)
 
     cart = Cart(request)
-    cart.add(product=product, quantity=quantity, update_quantity=False)
 
+    # 1. Получаем лучшую акцию для категории товара
+    promotion = get_active_promotion_for_category(product.category)
+
+    # 2. Считаем цены
+    original_price = product.price  # Decimal из модели
+    final_price = original_price
+
+    if promotion:
+        discount = promotion.get_discount_amount(original_price)
+        final_price = original_price - discount
+
+    # 3. Добавляем в корзину с обеими ценами
+    cart.add(
+        product=product,
+        quantity=quantity,
+        price=final_price,          # цена со скидкой (платит клиент)
+        original_price=original_price,  # полная цена (для расчёта скидки в заказе)
+        update_quantity=False
+    )
+
+    # 4. Формируем ответ
     referer = request.META.get('HTTP_REFERER')
+    is_ajax = request.headers.get('X-Requested-With') == 'XMLHttpRequest'
+
+    response_data = {
+        'success': True,
+        'message': f'{product.name} добавлен в корзину!',
+        'cart_count': len(cart),
+        'item_total_price': str(final_price * quantity),
+    }
+
+    if is_ajax:
+        return JsonResponse(response_data)
+
     if referer:
-        # Если это AJAX-запрос — верни JSON, иначе редирект
-        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-            return JsonResponse({
-                'success': True,
-                'message': f'{product.name} добавлен в корзину!',
-                'cart_count': len(cart)
-            })
         return redirect(referer)
 
-    return redirect('products:catalog')
+    return redirect('products:catalog')    
+#@require_POST
+# @csrf_protect
+# def add_to_cart(request):
+#     product_id = request.POST.get('product_id')
+#     quantity = int(request.POST.get('quantity', 1))
+#     if quantity < 1:
+#         quantity = 1
+
+#     try:
+#         product = Product.objects.get(id=product_id, is_active=True, available=True)
+#     except Product.DoesNotExist:
+#         return JsonResponse({'success': False, 'message': 'Товар не найден'}, status=404)
+
+#     cart = Cart(request)
+#     cart.add(product=product, quantity=quantity, update_quantity=False)
+
+#     referer = request.META.get('HTTP_REFERER')
+#     if referer:
+#         # Если это AJAX-запрос — верни JSON, иначе редирект
+#         if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+#             return JsonResponse({
+#                 'success': True,
+#                 'message': f'{product.name} добавлен в корзину!',
+#                 'cart_count': len(cart)
+#             })
+#         return redirect(referer)
+
+#     return redirect('products:catalog')
 
 
 @login_required
@@ -299,7 +360,7 @@ def about(request):
 
 def catalog_view(request):
     products = Product.objects.filter(is_active=True, available=True)
-    
+
     # Фильтры
     category_id = request.GET.get('category')
     min_price = request.GET.get('min_price')
@@ -317,17 +378,73 @@ def catalog_view(request):
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
 
-    # Проверка избранного для отображения сердечек сразу при загрузке
+    # Проверка избранного
     fav_ids = set()
     if request.user.is_authenticated:
         fav_ids = set(Favorite.objects.filter(user=request.user).values_list('product_id', flat=True))
-    
+
+    # Подготовка данных для отображения скидок
+    # Сначала соберём все категории, которые встречаются на странице, чтобы не делать N+1 запросов
+    categories_on_page = {p.category for p in page_obj if p.category}
+    promotions_by_category = {}
+    for cat in categories_on_page:
+        promo = get_active_promotion_for_category(cat)
+        if promo:
+            promotions_by_category[cat.id] = promo
+
+    # Добавляем атрибуты к каждому товару
     for product in page_obj:
         product.is_favorite = product.id in fav_ids
+
+        # Скидка
+        promo = promotions_by_category.get(product.category_id) if product.category else None
+        if promo:
+            product.promotion = promo
+            discount_factor = 1 - (promo.discount_percent / 100)
+            product.final_price = round(float(product.price) * discount_factor, 2)
+            product.discount_amount = round(float(product.price) - product.final_price, 2)
+        else:
+            product.promotion = None
+            product.final_price = float(product.price)
+            product.discount_amount = 0.0
 
     context = {
         'products': page_obj,
         'categories': Category.objects.filter(is_active=True),
-        'filters': request.GET
+        'filters': request.GET,
     }
     return render(request, 'products/catalog.html', context)
+# def catalog_view(request):
+#     products = Product.objects.filter(is_active=True, available=True)
+    
+#     # Фильтры
+#     category_id = request.GET.get('category')
+#     min_price = request.GET.get('min_price')
+#     max_price = request.GET.get('max_price')
+
+#     if category_id:
+#         products = products.filter(category_id=category_id)
+#     if min_price:
+#         products = products.filter(price__gte=min_price)
+#     if max_price:
+#         products = products.filter(price__lte=max_price)
+
+#     # Пагинация
+#     paginator = Paginator(products, 9)
+#     page_number = request.GET.get('page')
+#     page_obj = paginator.get_page(page_number)
+
+#     # Проверка избранного для отображения сердечек сразу при загрузке
+#     fav_ids = set()
+#     if request.user.is_authenticated:
+#         fav_ids = set(Favorite.objects.filter(user=request.user).values_list('product_id', flat=True))
+    
+#     for product in page_obj:
+#         product.is_favorite = product.id in fav_ids
+
+#     context = {
+#         'products': page_obj,
+#         'categories': Category.objects.filter(is_active=True),
+#         'filters': request.GET
+#     }
+#     return render(request, 'products/catalog.html', context)

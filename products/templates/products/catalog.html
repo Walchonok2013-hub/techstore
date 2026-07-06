@@ -125,7 +125,59 @@
     <div class="products-container">
       {% if products %}
         <div class="row g-4">
-          {% for product in products %}
+
+{% for product in products %}
+  <div class="col-md-6 col-lg-4 col-xl-3">
+    <div class="card h-100 position-relative">
+      <!-- Кнопка избранного -->
+      <button 
+        type="button" 
+        class="btn favorite-btn shadow-none{% if product.is_favorite %}active{% endif %}" 
+        data-product-id="{{ product.id }}" 
+        onclick="toggleFavorite(this)"
+        aria-label="Добавить в избранное"
+      >
+        <i class="bi bi-heart{% if product.is_favorite %}-fill{% endif %}"></i>
+      </button> 
+
+      {% if product.image %}
+        <img src="{{ product.image.url }}" class="card-img-top" alt="{{ product.name }}" loading="lazy">
+      {% else %}
+        <div class="card-img-top bg-light d-flex align-items-center justify-content-center" style="height: 200px;">
+          <span class="text-muted">Нет фото</span>
+        </div>
+      {% endif %}
+
+      <div class="card-body d-flex flex-column">
+        <h5 class="card-title">{{ product.name }}</h5>
+        <p class="card-text flex-grow-1">{{ product.description|truncatewords:12 }}</p>
+
+        <div class="mt-auto">
+          {% if product.promotion %}
+            <div class="d-flex align-items-baseline mb-2">
+              <span class="price-badge">-{{ product.promotion.discount_percent }}%</span>
+              <span class="text-decoration-line-through text-muted me-2 ms-2">{{ product.price }} ₽</span>
+              <span class="h5 fw-bold text-primary">{{ product.final_price }} ₽</span>
+            </div>
+          {% else %}
+            <span class="h5 fw-bold text-primary">{{ product.price }} ₽</span>
+          {% endif %}
+
+          <form action="{% url 'cart:cart_add' product.id %}" method="post" class="mt-3">
+            {% csrf_token %}
+            <!-- Скрытое поле, если нужно передавать количество -->
+            <input type="hidden" name="quantity" value="1">
+            <button type="submit" class="btn btn-outline-success w-100">В корзину</button>
+          </form> 
+          
+          <a href="{% url 'products:product_detail' product.slug %}" class="btn btn-outline-primary w-100 mt-2">Подробнее</a>
+        </div>
+      </div>
+    </div>
+  </div>
+{% endfor %}
+ </div>
+          {% comment %} {% for product in products %}
             <div class="col-md-6 col-lg-4 col-xl-3">
               <div class="card h-100 position-relative">
 
@@ -180,8 +232,8 @@
                 </div>
               </div>
             </div>
-          {% endfor %}
-        </div>
+          {% endfor %} {% endcomment %}
+       
 
         {% if products.has_other_pages %}
           <nav aria-label="Page navigation" class="mt-5">

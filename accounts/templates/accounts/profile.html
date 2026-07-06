@@ -122,7 +122,7 @@
 
     .stat-card {
         background: linear-gradient(135deg, #0c1cf571 0%, #d0d1d6e8 100%);
-        color: white;
+        color: #2b59ad ;
         padding: 16px;
         border-radius: 10px;
         text-align: center;
@@ -350,6 +350,7 @@
     </h3>
     <p class="mb-0 text-muted">Средняя скидка</p>
 </div>
+
     <!-- Новый блок: Средний чек -->
     <div class="stat-card">
         <h3>{{ average_check|floatformat:2|default:0 }} ₽</h3>
@@ -358,6 +359,7 @@
 </div>
 
 
+<!-- Вывод списка заказов (только если они есть) -->
 {% if orders %}
     <ul class="orders-list">
         {% for order in orders %}
@@ -375,21 +377,18 @@
             </li>
         {% endfor %}
     </ul>
-{% else %}
-    <p class="text-muted">У вас пока нет заказов.</p>
 {% endif %}
-            </div>
+
+<!-- Сообщение о количестве заказов (выводится всегда) -->
+{% if orders_count == 0 %}
+    <p>У вас пока нет заказов.</p>
+{% else %}
+    <p>Всего заказов: {{ orders_count }}</p>
+{% endif %}
         </div>
     </div>
 </div>
-
-<!-- Закрытие колонок -->
-</div> <!-- Закрытие контейнера row g-4 profile-container -->
-</div> <!-- Закрытие контейнера container my-5 -->
-
-
-{% endblock %} <!-- ЗАКРЫТИЕ БЛОКА content --> 
-
+{% endblock %}
 
 
 

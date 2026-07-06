@@ -47,10 +47,17 @@ class Order(models.Model):
         return f'Order #{self.id}'
 
 
+
 class OrderItem(models.Model):
     order = models.ForeignKey(Order, related_name='items', on_delete=models.CASCADE)
     product = models.ForeignKey(Product, on_delete=models.CASCADE)
-    price = models.DecimalField('Цена', max_digits=10, decimal_places=2)
+
+    # Цена со скидкой (та, по которой реально купили)
+    price = models.DecimalField('Цена со скидкой', max_digits=10, decimal_places=2)
+
+    # ПОЛНАЯ цена (без скидки) — новое поле
+    original_price = models.DecimalField('Полная цена', max_digits=10, decimal_places=2, default=0)
+
     quantity = models.PositiveIntegerField('Количество', default=1)
 
     def __str__(self):

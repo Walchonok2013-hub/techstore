@@ -1,17 +1,94 @@
 from django.shortcuts import render, redirect, get_object_or_404
-from django.contrib import messages
-from django.contrib.auth.decorators import login_required
-from django.db import transaction
-from .forms import OrderCreateForm
 from .models import Order, OrderItem, Payment
 from cart.models import Cart as CartModel  # Импортируем МОДЕЛЬ корзины, а не класс-обертку
 import logging
-from cart.cart import Cart
 from django.db.models import Sum, F
 from django.contrib import messages
+from django.shortcuts import redirect, render
+from django.contrib.auth.decorators import login_required
+from django.db import transaction
+from decimal import Decimal
+from .models import Order, OrderItem
+from cart.cart import Cart
+from .forms import OrderCreateForm
 
 logger = logging.getLogger(__name__)
 
+@login_required
+@transaction.atomic
+def order_create(request):
+    cart = Cart(request)
+    if not cart:
+        return redirect('cart:cart_detail')
+
+    if request.method == 'POST':
+        # Здесь должна быть валидация формы с данными доставки
+        # form = OrderCreateForm(request.POST) 
+        # if not form.is_valid(): ...
+        
+        # Создаем заказ, но НЕ сохраняем сразу, чтобы сначала посчитать суммы
+        order = Order.objects.create(
+            user=request.user if request.user.is_authenticated else None,
+            first_name=request.POST.get('first_name', ''),
+            last_name=request.POST.get('last_name', ''),
+            email=request.POST.get('email', ''),
+            phone=request.POST.get('phone', ''),
+            address=request.POST.get('address', ''),
+            status='new',  # Начальный статус
+            # total_price, original_total, discount пока 0, мы их пересчитаем ниже
+        )
+
+        total_price_sum = Decimal('0')
+        original_total_sum = Decimal('0')
+
+        # Проходимся по корзине и создаем позиции заказа
+        for item in cart:
+            product = item['product']
+            quantity = item['quantity']
+            price = item['price']              # Цена со скидкой (платит клиент)
+            original_price = item['original_price'] # Полная цена (до скидки)
+
+            OrderItem.objects.create(
+                order=order,
+                product=product,
+                quantity=quantity,
+                price=price,
+                original_price=original_price
+            )
+
+            total_price_sum += price * quantity
+            original_total_sum += original_price * quantity
+
+        # ГЛАВНОЕ: Пересчитываем итоговые поля заказа
+        order.total_price = total_price_sum
+        order.original_total = original_total_sum
+        order.discount = original_total_sum - total_price_sum
+        
+        # Сохраняем обновленные суммы
+        order.save(update_fields=['total_price', 'original_total', 'discount'])
+
+        # Очищаем корзину
+        cart.clear()
+
+        return redirect('orders:order_created', order_id=order.id)
+    else:
+        form = OrderCreateForm()
+    return render(request, 'orders/create.html', {'cart': cart, 'form': form})
+
+@login_required
+def order_detail_user(request, order_id):
+    # Получаем заказ, проверяя, что он принадлежит текущему пользователю
+    order = get_object_or_404(Order, id=order_id, user=request.user)
+    return render(request, 'orders/order_detail_user.html', {'order': order})
+
+def order_confirmation(request, order_id):
+    order = get_object_or_404(Order, id=order_id, user=request.user)
+    return render(request, 'orders/confirmation.html', {'order': order})
+
+def order_detail(request, order_id):
+   
+    order = get_object_or_404(Order, id=order_id)
+    return render(request, 'orders/detail.html', {'order': order})
 
 @login_required
 def payment_success(request, order_id):
@@ -28,7 +105,7 @@ def payment_success(request, order_id):
     payment.save()
 
     # ГЛАВНОЕ ИСПРАВЛЕНИЕ: проверяем метод оплаты
-    # Замени 'cash' на то значение, которое у тебя в choices для «При получении»
+   
     if payment.payment_method != 'cash':
         order.status = 'paid'
         order.save()
@@ -44,6 +121,8 @@ def payment_success(request, order_id):
         )
 
     return redirect('orders:my_orders')
+
+
 
 # @login_required
 # def payment_success(request, order_id):
@@ -71,57 +150,62 @@ def payment_success(request, order_id):
 #         messages.success(request, f"Оплата заказа #{order.id} успешно завершена!")
 
 #     return redirect('orders:my_orders')
-@login_required
-@transaction.atomic
-def order_create(request):
-    cart = Cart(request)
 
-    if len(cart) == 0:
-        messages.warning(request, "Ваша корзина пуста.")
-        return redirect('cart:cart_detail')
 
-    if request.method == 'POST':
-        form = OrderCreateForm(request.POST)
-        if form.is_valid():
-            # 1. Создаем черновик заказа
-            order = form.save(commit=False)
-            order.user = request.user if request.user.is_authenticated else None
-            order.status = 'pending'
-            order.save()  # Сохраняем, чтобы получить order.id для связи с позициями
 
-            # 2. Создаем все позиции заказа (OrderItem)
-            for item in cart:
-                product = item['product']
-                qty = item['quantity']
-                price = item['price']
 
-                OrderItem.objects.create(
-                    order=order,
-                    product=product,
-                    quantity=qty,
-                    price=price,
-                    # total_price=price * qty  # Раскомментируй, если в модели OrderItem есть это поле
-                )
 
-            # 3. ГЛАВНОЕ ИСПРАВЛЕНИЕ: Считаем итоговую сумму через БД, а не циклом в Python
-            # Это гарантирует, что total_price всегда равен сумме позиций
-            total_sum = order.items.aggregate(total=Sum(F('price') * F('quantity')))['total']
+# @login_required
+# @transaction.atomic
+# def order_create(request):
+#     cart = Cart(request)
+
+#     if len(cart) == 0:
+#         messages.warning(request, "Ваша корзина пуста.")
+#         return redirect('cart:cart_detail')
+
+#     if request.method == 'POST':
+#         form = OrderCreateForm(request.POST)
+#         if form.is_valid():
+#             # 1. Создаем черновик заказа
+#             order = form.save(commit=False)
+#             order.user = request.user if request.user.is_authenticated else None
+#             order.status = 'pending'
+#             order.save()  # Сохраняем, чтобы получить order.id для связи с позициями
+
+#             # 2. Создаем все позиции заказа (OrderItem)
+#             for item in cart:
+#                 product = item['product']
+#                 qty = item['quantity']
+#                 price = item['price']
+
+#                 OrderItem.objects.create(
+#                     order=order,
+#                     product=product,
+#                     quantity=qty,
+#                     price=price,
+#                     # total_price=price * qty  # Раскомментируй, если в модели OrderItem есть это поле
+#                 )
+
+#             # 3. ГЛАВНОЕ ИСПРАВЛЕНИЕ: Считаем итоговую сумму через БД, а не циклом в Python
+#             # Это гарантирует, что total_price всегда равен сумме позиций
+#             total_sum = order.items.aggregate(total=Sum(F('price') * F('quantity')))['total']
             
-            # Если заказ вдруг пустой (защита от None), ставим 0
-            final_total = total_sum if total_sum is not None else 0
+#             # Если заказ вдруг пустой (защита от None), ставим 0
+#             final_total = total_sum if total_sum is not None else 0
             
-            order.total_price = final_total
-            order.original_total = final_total
-            order.save(update_fields=['total_price', 'original_total'])
+#             order.total_price = final_total
+#             order.original_total = final_total
+#             order.save(update_fields=['total_price', 'original_total'])
 
-            request.session['pending_order_id'] = order.id
+#             request.session['pending_order_id'] = order.id
 
-            messages.success(request, f"Заказ #{order.id} создан. Выберите способ оплаты.")
-            return redirect('orders:payment_choice', order.id)
-    else:
-        form = OrderCreateForm()
+#             messages.success(request, f"Заказ #{order.id} создан. Выберите способ оплаты.")
+#             return redirect('orders:payment_choice', order.id)
+#     else:
+#         form = OrderCreateForm()
 
-    return render(request, 'orders/create.html', {'form': form, 'cart': cart})
+#     return render(request, 'orders/create.html', {'form': form, 'cart': cart})
   
 
 

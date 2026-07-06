@@ -1,0 +1,36 @@
+{% extends 'base.html' %}
+
+{% block title %}Подтверждение заказа №{{ order.id }}{% endblock %}
+
+{% block content %}
+<div class="container mt-5 text-center">
+    <div class="alert alert-success" role="alert">
+        <h2>✅ Ваш заказ успешно создан!</h2>
+        <p>Спасибо за покупку в Techstore.</p>
+    </div>
+
+    <h3>Детали заказа</h3>
+    <p><strong>Номер заказа:</strong> #{{ order.id }}</p>
+    <p><strong>Дата:</strong> {{ order.created_at|date:"d.m.Y H:i" }}</p>
+    <p><strong>Статус:</strong> Ожидает подтверждения</p>
+
+    {% if order.total_price %}
+        <p><strong>Итого к оплате:</strong> {{ order.total_price|floatformat:0 }} ₽</p>
+    {% endif %}
+
+    <hr class="my-4">
+
+    <div class="d-flex justify-content-center gap-3">
+
+        <a href="{% url 'orders:order_detail_user' order.id %}" class="btn btn-primary">
+            Детали заказа
+        </a>
+        <a href="{% url 'products:catalog' %}" class="btn btn-outline-secondary">
+            Продолжить покупки
+        </a>
+        <a href="{% url 'orders:my_orders' %}" class="btn btn-outline-info">
+            Мои заказы
+        </a>
+    </div>
+</div>
+{% endblock %}

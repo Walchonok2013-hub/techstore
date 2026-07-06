@@ -24,7 +24,7 @@ from django.db.models import Sum, Avg, Count
 from .models import PaymentMethod
 from .forms import AddCardForm
 import logging
-
+from .forms import CustomUserCreationForm
 logger = logging.getLogger(__name__)
 
 
@@ -313,19 +313,30 @@ def profile_view(request):
 
     return render(request, 'accounts/profile.html', context)
 
-def register_view(request):
+# def register_view(request):
+#     if request.method == 'POST':
+#         form = CustomUserCreationForm(request.POST)
+#         if form.is_valid():
+#             user = form.save()
+#             login(request, user)
+#             return redirect('products:home')
+#     else:
+      
+#         form = CustomUserCreationForm()
+#     return render(request, 'accounts/register.html', {'form': form})
+
+def register(request):
     if request.method == 'POST':
         form = CustomUserCreationForm(request.POST)
         if form.is_valid():
             user = form.save()
             login(request, user)
+            messages.success(request, 'Вы успешно зарегистрированы!')
             return redirect('products:home')
     else:
-      
         form = CustomUserCreationForm()
+
     return render(request, 'accounts/register.html', {'form': form})
-
-
 
 @login_required
 def edit_profile(request):

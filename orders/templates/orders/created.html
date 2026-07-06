@@ -31,10 +31,10 @@
         </a>
         <h1>Ваш заказ №{{ order_id }} успешно создан!</h1>
 <p>Спасибо за покупку!</p>
-        <a href="{% url 'products:product_list' %}" class="btn btn-outline-secondary btn-lg">
+        <a href="{% url 'orders:product_list' %}" class="btn btn-outline-secondary btn-lg">
             Продолжить покупки
         </a>
-        <a href="{% url 'orders:user_orders' %}" class="btn btn-outline-info btn-lg">
+        <a href="{% url 'orders:my_orders' %}" class="btn btn-outline-info btn-lg">
             Мои заказы
         </a>
     </div>

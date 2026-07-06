@@ -1,6 +1,8 @@
 
 from django.db import models
 from django.conf import settings
+from django.utils import timezone
+from decimal import Decimal
 
 class Category(models.Model):
     name = models.CharField(max_length=100)
@@ -42,6 +44,43 @@ class Product(models.Model):
 
     def __str__(self):
         return self.name
+    
+
+
+
+
+
+class Promotion(models.Model):
+    name = models.CharField("Название акции", max_length=100)
+    is_active = models.BooleanField("Активна", default=True)
+    discount_percent = models.PositiveSmallIntegerField("Скидка, %")
+    applies_to_category = models.ForeignKey(
+        'Category', on_delete=models.CASCADE, null=True, blank=True,
+        verbose_name="Категория"
+    )
+    expires_at = models.DateTimeField("Дата окончания", null=True, blank=True)
+
+    def is_valid(self):
+        """Проверяет, активна ли акция прямо сейчас."""
+        if not self.is_active:
+            return False
+        if self.expires_at and self.expires_at < timezone.now():
+            return False
+        return True
+
+    def get_discount_amount(self, price: Decimal) -> Decimal:
+        """
+        Считает сумму скидки для данной цены.
+        Возвращает Decimal, округлённый до 2 знаков.
+        """
+        if not self.is_valid():
+            return Decimal('0')
+        
+        discount = price * (Decimal(self.discount_percent) / Decimal('100'))
+        return discount.quantize(Decimal('0.01'))
+
+    def __str__(self):
+        return f"{self.name} ({self.discount_percent}%)"
 
 
 
