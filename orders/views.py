@@ -54,79 +54,70 @@ def profile(request):
 
 
 @login_required
-@transaction.atomic
 def order_create(request):
     cart = Cart(request)
-    
-    # Проверка на пустую корзину
-    if not cart or len(cart) == 0:
+        # 👇 ВСТАВЬ ЭТУ СТРОКУ ДЛЯ ОТЛАДКИ
+    print("СОДЕРЖИМОЕ КОРЗИНЫ:", cart.cart) 
+    # ✅ ИСПРАВЛЕНИЕ ЗДЕСЬ: используем len(cart) вместо несуществующего метода
+    if len(cart) == 0:
         messages.warning(request, "Ваша корзина пуста.")
         return redirect('cart:cart_detail')
 
     if request.method == 'POST':
         form = OrderCreateForm(request.POST)
         if form.is_valid():
-            order = form.save(commit=False)
-            order.user = request.user
-            # Важно: сразу сохраняем, чтобы получить order.id для связи с OrderItem
-            order.save()
+            with transaction.atomic():
+                order = form.save(commit=False)
+                order.user = request.user
+                order.save()
 
-            total_price_sum = Decimal('0')
-            original_total_sum = Decimal('0')
-            discount_sum = Decimal('0')
+                total_price_sum = Decimal('0')
+                original_total_sum = Decimal('0')
+                discount_sum = Decimal('0')
 
-            current_date = timezone.now()
-            _, days_in_month = calendar.monthrange(current_date.year, current_date.month)
-            end_of_month = current_date.replace(day=days_in_month)
+                for item in cart:
+                    product_id = item.get('product_id')
+                    if not product_id:
+                        continue
 
-            for item in cart:
-                # Безопасное получение ID продукта
-                product_id = item.get('product_id') or item.get('product')
-                if not product_id:
-                    continue
+                    try:
+                        product = Product.objects.select_related('category').get(pk=product_id)
+                    except Product.DoesNotExist:
+                        continue
 
-                try:
-                    product = Product.objects.get(pk=product_id)
-                except Product.DoesNotExist:
-                    logger.warning(f"Продукт с ID {product_id} не найден, пропускаем.")
-                    continue
+                    quantity = item['quantity']
+                    
+                    # Берем цену из корзины (она уже со скидкой благодаря get_current_price в cart.add)
+                    price_from_cart = item['price'] 
+                    original_price_from_cart = item.get('original_price', product.price)
 
-                quantity = item['quantity']
-                price_from_cart = item['price']
-                original_price_from_cart = item.get('original_price', product.price)
-                
-                final_price = price_from_cart
-                item_discount = Decimal('0')
+                    line_total = price_from_cart * quantity
+                    line_original_total = original_price_from_cart * quantity
+                    line_discount = line_original_total - line_total
 
-                # Логика скидки (оставил твою, но добавил проверку на тип данных)
-                if product.category == 'smartfony-i-aksessuary' and current_date <= end_of_month:
-                    discount_per_item = original_price_from_cart * Decimal('0.20')
-                    item_discount = discount_per_item * quantity
-                    final_price = original_price_from_cart - discount_per_item
-                
-                discount_sum += item_discount
-                original_total_sum += original_price_from_cart * quantity
-                total_price_sum += final_price * quantity
+                    total_price_sum += line_total
+                    original_total_sum += line_original_total
+                    discount_sum += line_discount
 
-                OrderItem.objects.create(
-                    order=order,
-                    product=product,
-                    quantity=quantity,
-                    price=final_price,
-                    original_price=original_price_from_cart
-                )
+                    OrderItem.objects.create(
+                        order=order,
+                        product=product,
+                        quantity=quantity,
+                        final_price=price_from_cart,          # было: price=...
+                        original_price=original_price_from_cart
+                    )
 
-            # Обновляем итоговые суммы заказа
-            order.original_total = original_total_sum
-            order.discount = discount_sum
-            order.total_price = total_price_sum
-            order.save(update_fields=['original_total', 'discount', 'total_price'])
+                order.original_total = original_total_sum
+                order.discount = discount_sum
+                order.total_price = total_price_sum
+                order.save(update_fields=['original_total', 'discount', 'total_price'])
 
             cart.clear()
+            messages.success(request, f"Ваш заказ №{order.id} успешно оформлен!")
             return redirect('orders:order_created', order_id=order.id)
     else:
         form = OrderCreateForm()
-    
+
     return render(request, 'orders/create.html', {'cart': cart, 'form': form})
 
 

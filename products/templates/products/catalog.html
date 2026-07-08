@@ -64,12 +64,28 @@
       transform: scale(1.1);
     }
     .favorite-btn i {
-      color: #333;
+      color: #e63434;
       margin: 0;
     }
     .favorite-btn.active i {
       color: red;
     }
+    
+/* Бейдж со скидкой — теперь он будет как на макете */
+.promo-badge {
+    background-color: #0ea52f; /* Синий цвет Bootstrap primary */
+    color: white;
+    padding: 6px 10px;          /* Чуть больше воздуха внутри */
+    border-radius: 6px;         /* Скругление углов */
+    font-size: 0.85rem;
+    font-weight: 700;
+    position: absolute;
+    top: 12px;                  /* Чуть ниже края карточки */
+    left: 12px;                 /* Чуть правее края карточки */
+    z-index: 10;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.15); /* Легкая тень для объема */
+    text-transform: uppercase;  /* Опционально: "20%" станет "20%" (если нужно "СКИДКА 20%" - меняй HTML) */
+}
   </style>
 
   <!-- Весь контент каталога строго внутри container -->
@@ -152,87 +168,41 @@
         <h5 class="card-title">{{ product.name }}</h5>
         <p class="card-text flex-grow-1">{{ product.description|truncatewords:12 }}</p>
 
-        <div class="mt-auto">
-          {% if product.promotion %}
-            <div class="d-flex align-items-baseline mb-2">
-              <span class="price-badge">-{{ product.promotion.discount_percent }}%</span>
-              <span class="text-decoration-line-through text-muted me-2 ms-2">{{ product.price }} ₽</span>
-              <span class="h5 fw-bold text-primary">{{ product.final_price }} ₽</span>
-            </div>
-          {% else %}
-            <span class="h5 fw-bold text-primary">{{ product.price }} ₽</span>
-          {% endif %}
+<div class="mt-auto">
+    {% if product.promotion %}
+        <!-- Бейдж со скидкой (используем класс promo-badge) -->
+        <span class="promo-badge">
+            -{{ product.promotion.discount_percent }}%
+        </span>
 
-          <form action="{% url 'cart:cart_add' product.id %}" method="post" class="mt-3">
-            {% csrf_token %}
-            <!-- Скрытое поле, если нужно передавать количество -->
-            <input type="hidden" name="quantity" value="1">
-            <button type="submit" class="btn btn-outline-success w-100">В корзину</button>
-          </form> 
-          
-          <a href="{% url 'products:product_detail' product.slug %}" class="btn btn-outline-primary w-100 mt-2">Подробнее</a>
+        <!-- Цены в одну строку -->
+        <div class="d-flex align-items-baseline gap-2 w-100">
+            <span class="text-decoration-line-through text-muted small">
+                {{ product.price }} ₽
+            </span>
+            <span class="h5 fw-bold text-primary m-0">
+                {{ product.final_price }} ₽
+            </span>
         </div>
+    {% else %}
+        <span class="h5 fw-bold text-primary m-0">{{ product.price }} ₽</span>
+    {% endif %}
+
+    <form action="{% url 'cart:cart_add' product.id %}" method="post" class="mt-3">
+        {% csrf_token %}
+        <input type="hidden" name="quantity" value="1">
+        <button type="submit" class="btn btn-outline-success w-100">В корзину</button>
+    </form>
+    
+    <a href="{% url 'products:product_detail' product.slug %}" class="btn btn-outline-primary w-100 mt-2">Подробнее</a>
+</div>
+
       </div>
     </div>
   </div>
 {% endfor %}
  </div>
-          {% comment %} {% for product in products %}
-            <div class="col-md-6 col-lg-4 col-xl-3">
-              <div class="card h-100 position-relative">
 
-
-
-               <!-- КНОПКА ИЗБРАННОГО -->
-<button 
-    type="button" 
-    class="btn favorite-btn" 
-    data-product-id="{{ product.id|default:0 }}" 
-    onclick="toggleFavorite(this)"
->
-    <i class="bi bi-heart"></i>
-</button> 
-
-
-
-
-
-
-
-                {% if product.image %}
-                  <img src="{{ product.image.url }}" class="card-img-top" alt="{{ product.name }}" loading="lazy">
-                {% else %}
-                  <div class="card-img-top bg-light d-flex align-items-center justify-content-center" style="height: 200px;">
-                    <span class="text-muted">Нет фото</span>
-                  </div>
-                {% endif %}
-
-                <div class="card-body d-flex flex-column">
-                  <h5 class="card-title">{{ product.name }}</h5>
-                  <p class="card-text flex-grow-1">{{ product.description|truncatewords:12 }}</p>
-
-                  <div class="mt-auto">
-                    {% if product.discount_percent %}
-                      <div class="d-flex align-items-baseline mb-2">
-                        <span class="price-badge">-{{ product.discount_percent }}%</span>
-                        <span class="text-decoration-line-through text-muted me-2 ms-2">{{ product.original_price }} ₽</span>
-                        <span class="h5 fw-bold text-primary">{{ product.price }} ₽</span>
-                      </div>
-                    {% else %}
-                      <span class="h5 fw-bold text-primary">{{ product.price }} ₽</span>
-                    {% endif %}
-
-                    <form action="{% url 'cart:cart_add' product.id %}" method="post" class="mt-3">
-                      {% csrf_token %}
-                      <button type="submit" class="btn btn-outline-success w-100">В корзину</button>
-                    </form> 
-                    
-                    <a href="{% url 'products:product_detail' product.slug %}" class="btn btn-outline-primary w-100 mt-2">Подробнее</a>
-                  </div>
-                </div>
-              </div>
-            </div>
-          {% endfor %} {% endcomment %}
        
 
         {% if products.has_other_pages %}

@@ -15,8 +15,8 @@ urlpatterns = [
 
 
     path('addresses/<int:pk>/delete/', views.delete_address, name='delete_address'),
-    path('addresses/', views.profile_addresses, name='profile_addresses'),  # <-- только этот путь для списка
-    path('addresses/create/', views.create_address, name='create_address'),  # <-- этот путь нужен для формы
+    path('addresses/', views.profile_addresses, name='profile_addresses'),  
+    path('addresses/create/', views.create_address, name='create_address'),  
     path('addresses/<int:address_id>/edit/', views.edit_address, name='edit_address'),
     path('payment-methods/', views.payment_methods_view, name='payment_methods'),
     path('change-password/', views.change_password_view, name='change_password'),

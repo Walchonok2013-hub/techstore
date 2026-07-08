@@ -26,13 +26,13 @@ from .forms import AddCardForm
 import logging
 from .forms import CustomUserCreationForm
 from django.core.exceptions import ValidationError
-
+from django.contrib import messages
 from django.shortcuts import render
-
+from django.contrib.auth.decorators import login_required
 from django.db.models import Sum, Q
 from decimal import Decimal, ROUND_HALF_UP
 from orders.models import Order
-
+from django.shortcuts import render, redirect
 logger = logging.getLogger(__name__)
 
 
@@ -136,61 +136,37 @@ def profile(request):
     
     return render(request, 'accounts/profile.html', context)
 
-# @login_required
-# def profile(request):
-#     user = request.user
-#     # Получаем все заказы пользователя. Можно добавить фильтр .exclude(status='cancelled'), если нужно
-#     orders = Order.objects.filter(user=user)
+@login_required
+def create_address(request):
+    if request.method == 'POST':
+        title = request.POST.get('title', '')
+        full_address = request.POST.get('full_address', '')
+        phone = request.POST.get('phone', '')
+        notes = request.POST.get('notes', '')
+        is_default_raw = request.POST.get('is_default')
+        is_default = (is_default_raw == 'on')
 
-#     # 1. Считаем потрачено всего и количество заказов
-#     total_spent_data = orders.aggregate(total=Sum('total_price'))
-#     total_spent = total_spent_data['total'] or Decimal('0.00')
-#     total_orders = orders.count()
+        # Если ставят «основной» — сначала снимаем флаг со всех остальных
+        if is_default:
+            Address.objects.filter(user=request.user).update(is_default=False)
+        elif not Address.objects.filter(user=request.user).exists():
+            # Если адресов вообще нет — первый автоматически станет основным
+            is_default = True
 
-#     # 2. Считаем средний чек
-#     average_check = (
-#         (total_spent / total_orders).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
-#         if total_orders else Decimal('0.00')
-#     )
+        address = Address.objects.create(
+            user=request.user,
+            title=title,
+            full_address=full_address,
+            phone=phone,
+            notes=notes,
+            is_default=is_default,
+        )
 
-#     # 3. Считаем среднюю скидку (ПРАВИЛЬНЫЙ СПОСОБ)
-#     # Нам нужно посчитать процент скидки для КАЖДОГО заказа, а потом найти среднее
-#     discount_percentages = []
-    
-#     for order in orders:
-#         # Защита от деления на ноль, если original_total вдруг 0
-#         if order.original_total and order.original_total > 0:
-#             percent = (order.discount / order.original_total) * Decimal('100')
-#             discount_percentages.append(percent)
-    
-#     if discount_percentages:
-#         # Суммируем все проценты и делим на количество заказов
-#         sum_percent = sum(discount_percentages)
-#         average_discount_percent = (
-#             (sum_percent / len(discount_percentages)).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
-#         )
-#     else:
-#         average_discount_percent = Decimal('0.00')
+        messages.success(request, 'Адрес успешно добавлен.')
+        return redirect('accounts:profile_addresses')
 
-#     # 4. Считаем количество избранного (нужно добавить импорт модели Favorite)
-#     # Если у тебя нет модели Favorite, поставь 0 или закомментируй эту строку
-#     try:
-#         from .models import Favorite
-#         favorites_count = Favorite.objects.filter(user=user).count()
-#     except ImportError:
-#         favorites_count = 0
-
-#     context = {
-#         'user_profile': user,
-#         'total_spent': total_spent,
-#         'orders_count': total_orders,          # В шаблоне используй orders_count, а не total_orders
-#         'favorites_count': favorites_count,    # Передаем в шаблон
-#         'average_check': average_check,
-#         'average_discount_percent': average_discount_percent,
-#         'orders': orders[:5]                   # Передаем сами заказы для списка внизу
-#     }
-    
-#     return render(request, 'profile.html', context)
+    # GET — показываем форму создания
+    return render(request, 'accounts/addresses.html') 
 
 @login_required
 def edit_address(request, address_id):
@@ -224,9 +200,9 @@ def edit_address(request, address_id):
 
 @login_required
 def profile_addresses(request):
-    # Берём только адреса текущего пользователя
-    addresses = request.user.addresses.all()
+    addresses = request.user.addresses.all().order_by('-is_default', 'title')
     return render(request, 'accounts/addresses.html', {'addresses': addresses})
+
 @login_required
 def delete_address(request, pk):
     # Находим адрес, проверяя, что он принадлежит текущему пользователю
@@ -242,42 +218,7 @@ def delete_address(request, pk):
     messages.success(request, 'Адрес успешно удалён.')
     
     return redirect('accounts:profile_addresses')
-@login_required
-def create_address(request):
-    schema = AddressSchema()
 
-    if request.method == 'POST':
-        data = {
-            'title': request.POST.get('title', ''),
-            'full_address': request.POST.get('full_address', ''),
-            'phone': request.POST.get('phone', ''),
-            'notes': request.POST.get('notes', ''),  # <-- берём из POST, если нет — пустая строка
-            'is_default': request.POST.get('is_default') == 'on',
-        }
-
-        try:
-            validated_data = schema.load(data)
-        except ValidationError as err:
-            return render(request, 'accounts/create_address.html', {
-                'errors': err.messages,
-                'form_data': data,
-            })
-
-        # Если notes не пришло (или пустое), явно ставим пустую строку
-        if 'notes' not in validated_data or validated_data['notes'] is None:
-            validated_data['notes'] = ''
-
-        if not request.user.addresses.exists():
-            validated_data['is_default'] = True
-
-        Address.objects.create(
-            user=request.user,
-            **validated_data,
-        )
-
-        return redirect('accounts:profile_addresses')
-
-    return render(request, 'accounts/create_address.html')
 
 @login_required
 def user_favorites(request):
@@ -393,7 +334,7 @@ def payment_methods_add(request):
         # логика обработки добавления карты
         return redirect('accounts:payment-methods-add')  # или другое имя URL
     messages.success(request, 'Карта успешно добавлена')
-    return render(request, 'orders/payment_form.html')
+    return render(request, 'accounts/profile.html')
 
 
 
@@ -408,51 +349,45 @@ def profile_view(request):
     )
 
     # Безопасное получение значений (защита от None)
-    total_spent = stats['total_spent'] or 0
+    # Приводим к Decimal сразу, чтобы избежать ошибок при делении int/None
+    total_spent_raw = stats['total_spent'] or Decimal('0')
     orders_count = stats['orders_count'] or 0
-    total_discount = stats['total_discount'] or 0
-    total_original = stats['total_original'] or 0
+    total_discount_raw = stats['total_discount'] or Decimal('0')
+    total_original_raw = stats['total_original'] or Decimal('0')
 
-    # Расчет средней скидки в процентах
-    # Формула: (Сумма всех скидок / Сумма всех исходных цен) * 100
-    if total_original > 0:
-        average_discount_percent = (total_discount / total_original) * 100
+    # --- РАСЧЕТЫ С ОКРУГЛЕНИЕМ ---
+    
+    # 1. Средняя скидка в процентах: (Сумма скидок / Сумма исходных цен) * 100
+    if total_original_raw > 0:
+        avg_discount_raw = (total_discount_raw / total_original_raw) * 100
+        # Округляем до 1 знака после запятой (банковское округление)
+        average_discount_percent = avg_discount_raw.quantize(Decimal('0.1'), rounding=ROUND_HALF_UP)
     else:
-        average_discount_percent = 0
+        average_discount_percent = Decimal('0.0')
 
-    # Расчет среднего чека
+    # 2. Средний чек: Потрачено / Количество заказов
     if orders_count > 0:
-        average_check = total_spent / orders_count
+        avg_check_raw = total_spent_raw / orders_count
+        # Округляем до 1 знака после запятой
+        average_check = avg_check_raw.quantize(Decimal('0.1'), rounding=ROUND_HALF_UP)
     else:
-        average_check = 0
+        average_check = Decimal('0.0')
 
     # Считаем избранное
     favorites_count = Favorite.objects.filter(user=request.user).count()
 
     context = {
         'user': request.user,
-        'total_spent': total_spent,
+        'total_spent': total_spent_raw,       # Можно оставить raw или тоже округлить
         'orders_count': orders_count,
         'favorites_count': favorites_count,
         'average_discount_percent': average_discount_percent,
         'average_check': average_check,
-        # Можно передать сырые данные для отладки, если нужно
-        'stats_raw': stats, 
     }
 
     return render(request, 'accounts/profile.html', context)
 
-# def register_view(request):
-#     if request.method == 'POST':
-#         form = CustomUserCreationForm(request.POST)
-#         if form.is_valid():
-#             user = form.save()
-#             login(request, user)
-#             return redirect('products:home')
-#     else:
-      
-#         form = CustomUserCreationForm()
-#     return render(request, 'accounts/register.html', {'form': form})
+
 
 def register(request):
     if request.method == 'POST':
@@ -504,10 +439,7 @@ def settings_view(request):
     return render(request, 'accounts/settings.html')
 
 
-@login_required
-def addresses_view(request):
-    addresses = Address.objects.filter(user=request.user)
-    return render(request, 'accounts/addresses.html', {'addresses': addresses})
+
 
 
     
@@ -525,21 +457,27 @@ def get_default_user_id(apps, schema_editor):
         )
         return user.id  
     
-
-
-
 @login_required
 def user_favorites(request):
-    qs = request.user.user_favorites.select_related('product').all()
-    paginator = Paginator(qs, 9)  # 9 товаров на страницу
+    
+    qs = (
+        request.user.user_favorites
+        .select_related('product')
+        .order_by('-id')        
+    )
+
+    paginator = Paginator(qs, 9) 
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
 
     context = {
         'title': 'Избранное',
         'page_obj': page_obj,
-        'wishlist_count': qs.count(),
+        'wishlist_count': page_obj.paginator.count,
     }
     return render(request, 'accounts/favorites.html', context)
+
+
+
 
    

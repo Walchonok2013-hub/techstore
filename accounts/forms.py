@@ -27,7 +27,7 @@ def validate_strong_password(value):
     # Проверка на наличие спецсимвола
     # Ищем любой символ, который НЕ является буквой и НЕ является цифрой
     if not re.search(r'[^A-Za-z0-9]', value):
-        raise ValidationError("Пароль должен содержать хотя бы один специальный символ (!, @, #, \$ и т.д.).")
+        raise ValidationError(r"Пароль должен содержать хотя бы один специальный символ (!, @, #, $ и т.д.).")
 
 class CustomUserCreationForm(UserCreationForm):
     email = forms.EmailField(required=True, label='Email')

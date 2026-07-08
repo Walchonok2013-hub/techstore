@@ -72,19 +72,44 @@
         </div>
         <div class="card-body">
           <ul class="list-unstyled">
-            <!-- ИСПРАВЛЕНО: итерируемся по cart, а не по cart.items.all -->
             {% for item in cart %}
-              <li class="d-flex justify-content-between mb-2">
-                <div>
-                  <strong>{{ item.product.name }}</strong>
-                  <small class="text-muted">x {{ item.quantity }}</small>
-                </div>
-                <span>{{ item.total_price }} ₽</span>
-              </li>
+              {% if item.product %}
+                <li class="d-flex justify-content-between mb-2">
+                  <div>
+                    <strong>{{ item.product.name }}</strong>
+                    {% if item.quantity > 1 %}
+                      <small class="text-muted">x {{ item.quantity }}</small>
+                    {% endif %}
+                  </div>
+                  <span>{{ item.total_price }} ₽</span>
+                </li>
+              {% else %}
+                <!-- Если товар удалён — показываем предупреждение и НЕ считаем его в сумму -->
+                <li class="text-danger mb-2">
+                  Товар с ID {{ item.product_id }} больше не доступен.
+                  <small class="d-block">Пожалуйста, обновите корзину.</small>
+                </li>
+              {% endif %}
             {% empty %}
               <li>В корзине нет товаров</li>
             {% endfor %}
           </ul>
+          
+          <hr>
+          
+          <div class="d-flex justify-content-between align-items-center">
+            <h5>Итого:</h5>
+            <h5 class="text-primary">{{ cart.get_total_price }} ₽</h5>
+          </div>
+
+          {% if cart.get_total_quantity == 0 %}
+            <div class="alert alert-warning mt-3">
+              Корзина пуста. Добавьте товары, чтобы оформить заказ.
+            </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
           
           <hr>
           

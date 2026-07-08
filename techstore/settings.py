@@ -37,10 +37,10 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    #'accounts.apps.AccountsConfig'
+    'accounts.apps.AccountsConfig',
     'products',
     'cart',
-    'accounts',
+    'promotions',
     'orders',
     'main',
     
@@ -165,6 +165,9 @@ CACHES = {
 CART_SESSION_ID = 'cart'
 MESSAGE_STORAGE = 'django.contrib.messages.storage.session.SessionStorage'  # Исправлено
 
+BASE_DIR = Path(__file__).resolve().parent.parent
+LOGS_DIR = BASE_DIR / 'logs'
+LOGS_DIR.mkdir(exist_ok=True)
 
 LOGGING = {
     'version': 1,
@@ -173,7 +176,12 @@ LOGGING = {
         'file': {
             'level': 'INFO',
             'class': 'logging.FileHandler',
-            'filename': 'C:/Users/Саня/Desktop/DJANGO/techstore/django.log',  # укажите реальный путь
+            'filename': str(LOGS_DIR / 'django.log'),  # <-- важно: str()
+            'formatter': 'verbose',
+        },
+        'console': {
+            'level': 'INFO',
+            'class': 'logging.StreamHandler',
             'formatter': 'verbose',
         },
     },
@@ -184,10 +192,15 @@ LOGGING = {
         },
     },
     'loggers': {
-        'orders': {
-            'handlers': ['file'],
+        '': {
+            'handlers': ['file', 'console'],
             'level': 'INFO',
-            'propagate': True,
+            'propagate': False,
+        },
+        'orders': {
+            'handlers': ['file', 'console'],
+            'level': 'INFO',
+            'propagate': False,
         },
     },
 }

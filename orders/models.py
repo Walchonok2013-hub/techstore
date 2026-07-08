@@ -23,11 +23,9 @@ PAYMENT_TYPE_CHOICES = [
 
 class Order(models.Model):
     user = models.ForeignKey(
-        settings.AUTH_USER_MODEL, 
-        on_delete=models.SET_NULL, 
-        null=True, 
-        blank=True,                                           
-        related_name='user_orders' 
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,          # ← твой выбор: заказ удаляется вместе с пользователем
+        related_name='user_orders'        # ← теперь можно делать user.user_orders.all()
     )
     
     first_name = models.CharField('Имя', max_length=50, default='')
@@ -51,14 +49,12 @@ class Order(models.Model):
         default='new'
     )
 
-    # 👇 ЭТОГО ПОЛЯ НЕ ХВАТАЛО — ДОБАВЛЯЕМ ЕГО СЮДА 👇
+
     payment_type = models.CharField(
         'Способ оплаты',
         max_length=20,
         choices=PAYMENT_TYPE_CHOICES,
-        default='cash',
-        blank=True,
-        null=True
+        default='cash'                  
     )
 
     def __str__(self):
@@ -82,32 +78,45 @@ class Order(models.Model):
 
 
 class OrderItem(models.Model):
-    order = models.ForeignKey(Order, related_name='items', on_delete=models.CASCADE)
-    product = models.ForeignKey(Product, on_delete=models.CASCADE)
+    order = models.ForeignKey(
+        'orders.Order',
+        related_name='items',
+        on_delete=models.CASCADE
+    )
+    product = models.ForeignKey(
+        'products.Product',
+        on_delete=models.PROTECT  # Защита от удаления товара, если есть заказы
+    )
 
-    # Цена со скидкой (та, по которой реально купили)
-    price = models.DecimalField('Цена со скидкой', max_digits=10, decimal_places=2)
+    # Цена, по которой товар был куплен (со всеми скидками)
+    final_price = models.DecimalField(
+        'Цена со скидкой (на момент покупки)',
+        max_digits=10,
+        decimal_places=2,
+    )
 
-    # ПОЛНАЯ цена (без скидки) — новое поле
-    original_price = models.DecimalField('Полная цена', max_digits=10, decimal_places=2, default=0)
+    # Полная цена товара без скидок (для отображения экономии)
+    original_price = models.DecimalField(
+        'Полная цена (без скидок)',
+        max_digits=10,
+        decimal_places=2,
+    )
 
     quantity = models.PositiveIntegerField('Количество', default=1)
 
     @property
     def discount_amount(self):
-        return (self.original_price - self.price) * self.quantity
-    
+        """Сумма скидки для этой позиции"""
+        # Защита от отрицательного значения, если вдруг цены перепутают
+        return max((self.original_price - self.final_price) * self.quantity, Decimal('0'))
+
     @property
     def get_cost(self):
-        return self.price * self.quantity 
-    
-    def save(self, *args, **kwargs):
-        super().save(*args, **kwargs)
-        
-        self.order.recalculate_totals()  
+        """Итоговая стоимость позиции (final_price * quantity)"""
+        return self.final_price * self.quantity
 
     def __str__(self):
-        return f"{self.quantity} x {self.product.name}"
+        return f"{self.quantity} x {self.product.name} ({self.get_cost:.2f} ₽)"
 
 
 class Payment(models.Model):
