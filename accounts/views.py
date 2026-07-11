@@ -111,7 +111,7 @@ def profile(request):
     # Вариант А: Если у тебя есть отдельная модель Favorite (Рекомендуемый)
     # Раскомментируй эти строки, если модель Favorite существует:
     # from favorites.models import Favorite
-    # favorites_count = Favorite.objects.filter(user=request.user).count()
+    favorites_count = Favorite.objects.filter(user=request.user).count()
     
     # Вариант Б: Если избранное хранится как M2M поле на модели Product
     # Проверяем наличие атрибута, чтобы view не упал, если связи еще нет в БД

@@ -26,7 +26,7 @@ urlpatterns = [
     path('cards/', views.cards_list, name='cards_list'),
     path('cards/add/', views.add_card, name='add_card'),
     path('cards/<int:pk>/delete/', views.delete_card, name='delete_card'),
-
+   
     path('favorites/<int:product_id>/toggle/', views.toggle_favorite_ajax, name='toggle_favorite'),
     path('favorites/', views.user_favorites, name='favorites'),
 

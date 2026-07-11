@@ -8,8 +8,9 @@
     <div class="row">
       <div class="col-lg-12">
         <h1 class="mb-4">{{ title }}</h1>
+        
+        {% if page_obj and page_obj.object_list %}
 
-        {% if page_obj and page_obj.has_objects %}
           <div class="row g-4">
             {% for fav in page_obj %}
               {% if fav.product %}

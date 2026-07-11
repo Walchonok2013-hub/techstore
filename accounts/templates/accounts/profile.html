@@ -123,8 +123,8 @@
     }
 
     .stat-card {
-        background: linear-gradient(135deg, #8fafff71 0%, #435d75e8 100%);
-        color:  #f1f0eb;
+        background: linear-gradient(135deg, #8fafff71 0%, #596e81e8 100%);
+        color:  #000000;
         padding: 16px;
         border-radius: 10px;
         text-align: center;
@@ -145,7 +145,7 @@
 
     .stat-card p {
         font-size: 13px;
-        color: #faf8f1;
+        color: #020202;
         margin: 0;
     }
 
@@ -329,7 +329,6 @@
             <a href="{% url 'accounts:change_password' %}" class="btn btn-outline-primary">Сменить пароль</a>
             <a href="{% url 'orders:my_orders' %}" class="btn btn-outline-primary">Мои заказы</a>
             <a href="{% url 'accounts:favorites' %}" class="btn btn-outline-primary">Избранное</a>
-           
             <a href="{% url 'accounts:profile_addresses' %}" class="btn btn-outline-primary">Адреса</a>
             <a href="{% url 'accounts:payment_methods' %}" class="btn btn-outline-primary">Способы оплаты</a>
         </div>
