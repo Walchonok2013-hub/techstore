@@ -21,6 +21,7 @@ Techstore — веб‑приложение интернет‑магазин�
 - pip install pillow
 - npm jquery bootstrap
 - python manage.py collectstatic
+- python manage.py check
 - python manage.py migrations
 - python manage.py migrate
 - python manage.py test
