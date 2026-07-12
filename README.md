@@ -13,9 +13,8 @@ Techstore — веб‑приложение интернет‑магазин�
 
 - python -m venv myenv
 - myenv\Scripts\activate
-- pip install -r requirements.txt   **Обнови `requirements.txt`**. В терминале (в папке проекта, с включённым `myenv`) выполни:
-   ```powershell
-   pip freeze > requirements.txt
+- pip install -r requirements.txt   
+- pip freeze > requirements.txt
 - python manage.py migrate 
 - python manage.py runserver
 
