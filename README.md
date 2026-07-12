@@ -14,8 +14,14 @@ Techstore — веб‑приложение интернет‑магазин�
 ### Требования
 
 - Python 3.11+
-
-
-
-
+- python -m venv myenv
+myenv\Scripts\activate
+pip install -r requirements.txt
+pip install Pandas
+pip install pillow
+npm jquery bootstrap
+python manage.py migrations
+python manage.py migrate
+python manage.py createsuperuser
+python manage.py runserver
 
