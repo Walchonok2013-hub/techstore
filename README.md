@@ -17,3 +17,4 @@ Techstore — веб‑приложение интернет‑магазин�
 - python manage.py migrate 
 - python manage.py runserver
 
+Сайт будет доступен по адресу: 127.0.0.1
