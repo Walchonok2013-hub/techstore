@@ -20,8 +20,9 @@ Techstore — веб‑приложение интернет‑магазин�
 - pip install Pandas
 - pip install pillow
 - npm jquery bootstrap
+- python manage.py collectstatic
 - python manage.py migrations
 - python manage.py migrate
-- python manage.py createsuperuser
+- python manage.py test
 - python manage.py runserver
 
