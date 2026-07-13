@@ -11,19 +11,17 @@ Techstore — веб‑приложение интернет‑магазин�
 
 ## 🚀 Быстрый старт
 
-### Требования
-
-- Python 3.11+
 - python -m venv myenv
 - myenv\Scripts\activate
-- pip install -r requirements.txt
-- pip install Pandas
-- pip install pillow
-- npm jquery bootstrap
-- python manage.py collectstatic
-- python manage.py check
-- python manage.py migrations
-- python manage.py migrate
-- python manage.py test
+- pip install -r requirements.txt   
+- pip freeze > requirements.txt
+- python manage.py migrate 
 - python manage.py runserver
 
+ Сайт будет доступен по адресу:🌐 127.0.0.1
+
+## 💡 Дополнительные команды (для разработчика)
+- Проверка проекта на ошибки: python manage.py check
+- Сбор статических файлов: python manage.py collectstatic
+- Создание новых миграций: python manage.py makemigrations
+- Запуск тестов: python manage.py test
