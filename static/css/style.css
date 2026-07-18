@@ -1,38 +1,25 @@
-
 * {
-    margin: 0 auto;
-    padding: 0; 
-    box-sizing: border-box ;
+    padding: 0;
+    box-sizing: border-box;
 }
 
-/*body {
+body {
     font-family: 'Arial', sans-serif;
     background-color: #f5f5f5;
     color: #333;
     line-height: 1.6;
-}*/
-body {
-  font-family: 'Arial', sans-serif;
-  background-color: #f5f5f5;
-  color: #333;
-  line-height: 1.6;
-  min-height: 100vh; /* Заполняет экран */
+    min-height: 100vh;
+    margin: 0; /* Убираем внешние отступы у body */
 }
 
 .container {
-  max-width: 1600px;
-  margin: 0 auto;
-  padding: 0 15px; /* Универсальные отступы */
+    max-width: 1600px;
+    /* margin: 0 auto; — оставляем, чтобы сам контейнер был по центру экрана */
+    padding: 0 15px; 
 }
 
-/*
-.container {
-  max-width: 1600px; /* Пример максимальной ширины */
-/*  margin: 0 auto; /* Центрирует блок 
-  padding:0;
-  justify-content: center;
-}
-*/
+
+
 /* Заголовок страницы */
 h1 {
     text-align: center;
@@ -46,51 +33,86 @@ h1 {
   overflow: hidden; /* Скрывает переполнение, если есть float */
   box-sizing: border-box; /* Учитывает padding/border в ширину */
 }
-/* Сетка каталога товаров 
-.products-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-    gap: 25px;
-    padding: 20px 0;
-}*/
 
-.products-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: 25px;
-  padding: 20px 0;
-  min-height: 300px; /* Минимальная высота сетки */
-}
-/* Карточка товара в каталоге */
-.product-card { 
-    background: white;
-    border-radius: 8px;
-    padding: 20px;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-    transition: transform 0.3s ease, box-shadow 0.3s ease;
-    text-align: center;
+/* Ограничиваем ширину карточки 300px, но не даем ей быть меньше 100% на мобильных */
+.product-card-wrapper {
+    max-width: 300px; 
+    width: 100%;
+    margin: 0 auto; /* Центрируем узкую карточку в колонке */
 }
 
-/* .product-card {
-  background: white;
-  border-radius: 8px;
-  padding: 20px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
-  display: flex;
-  flex-direction: column; Элементы идут вертикально 
-  justify-content: space-between; /* 
-  height: 100%;
-} */
-.product-card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+/* Убираем стандартные отступы у колонки, чтобы margin: 0 auto работал корректно */
+.row.g-4.centered-cards > div {
+    padding: 0 15px; /* Чуть поджимаем отступы колонок */
+}
+
+/* 1. Фиксируем ширину карточки, но даем ей сжиматься на мобильных */
+.product-card-wrapper {
+    max-width: 300px;
+    width: 100%;
+    margin: 0 auto; /* Центрируем внутри колонки */
+}
+
+/* 2. ВЫТЯГИВАЕМ карточку на всю высоту колонки */
+.product-card-wrapper .card {
+    height: 100%;
+    border: none; /* Убираем стандартную рамку Bootstrap, если нужно */
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+}
+
+/* 3. Умная обрезка длинных названий (чтобы карточка не разъехалась) */
+.product-title-short {
+    display: -webkit-box;
+    -webkit-line-clamp: 2; /* Максимум 2 строки */
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    line-height: 1.4;
+}
+
+
+/* 1. Сужаем саму карточку: было 300px, стало 290px + добавляем внутренний отступ */
+.product-card-wrapper {
+    max-width: 250px; /* Чуть уже */
+    width: 80%;
+    margin: 0 auto;
+    padding: 0 5px; /* Небольшой внешний "воздух" слева/справа, чтобы не слипались */
+}
+
+/* 2. Уменьшаем внутренние отступы карточки (было 15px-20px, стало 12px) */
+.product-card-wrapper .card {
+    height: 100%;
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08); /* Чуть мягче тень для легкости */
+}
+
+.card-body {
+    padding: 20px; /* Сужаем отступ внутри карточки */
+    display: flex;
+    flex-direction: column;
+}
+
+/* 3. Важно: фиксируем высоту картинки, чтобы сужение не ломало пропорции */
+.card-img-top, 
+.card-img-top img, 
+.position-relative img {
+    height: 300px; /* Чуть уменьшили высоту картинки под новый размер карточки */
+    object-fit: cover;
+    width: 80%;
+}
+
+/* 4. Кнопка: делаем её чуть уже, чтобы не упиралась в края при сужении */
+.btn.btn-outline-primary {
+    padding: 8px 16px; /* Меньше отступов внутри кнопки */
+    font-size: 0.9rem; /* Чуть меньше шрифт для компактности */
 }
 
 /* Изображение товара в каталоге */
 .product-image {
-    width: 100%;
-    height: 250px;
+    width: 80%;
+    height: 300px;
     object-fit: cover;
     border-radius: 6px;
     margin-bottom: 15px;

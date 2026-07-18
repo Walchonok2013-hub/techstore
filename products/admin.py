@@ -6,9 +6,13 @@ from .models import Category, Product
 
 @admin.register(Category)
 class CategoryAdmin(admin.ModelAdmin):
-    list_display = ('name', 'slug')
-    prepopulated_fields = {'slug': ('name',)}  # slug заполняется автоматически из названия
-    search_fields = ('name',)
+    list_display = ('name', 'slug','is_active')
+    list_filter = ('is_active',)
+    search_fields = ('name','slug')
+    prepopulated_fields = {'slug': ('name',)}
+    def __str__(self):
+        return self.name  
+      
 @admin.register(Product)
 class ProductAdmin(admin.ModelAdmin):
     list_display = ('name', 'category', 'price', 'available')

@@ -23,6 +23,23 @@
 </head>
 <body>
 <style>
+
+body {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh; /* Занимает минимум 100% высоты экрана */
+    margin: 0;
+}
+
+.container {
+    flex: 1; /* Растягивает контейнер с контентом, выталкивая футер вниз */
+    width: 100%;
+}
+
+footer {
+    margin-top: auto; /* Гарантирует, что футер будет внизу */
+    width: 100%;
+}    
     /* Контейнер для отступов и центрирования */
 .search-container {
     max-width: 1200px;
@@ -228,11 +245,13 @@
     </div>
 </nav>
     </header>
+<div class="container mt-5">
+    <!-- col-md-10 центрирует блок: по 1 колонке слева и справа -->
+    <div class="row justify-content-center">
+        <div class="col-12 col-md-10 col-lg-8">
+    {% comment %} <div class="container mt-5">
+        <div class="row"> {% endcomment %}
 
-    <div class="container mt-5">
-        <div class="row">
-            <!-- Контент страницы -->
-            <div class="col-lg-9">
                 <!-- Уведомления -->
                 {% include "includes/notifications.html" %}
                 
@@ -313,6 +332,4 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
   </script>
-  
-  
 

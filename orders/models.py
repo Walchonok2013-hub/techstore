@@ -19,13 +19,17 @@ STATUS_CHOICES = [
 PAYMENT_TYPE_CHOICES = [
     ('card', 'Банковская карта'),
     ('cash', 'При получении'),
+    ('online', 'Онлайн‑платёж'),
 ]
 
 class Order(models.Model):
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
-        on_delete=models.CASCADE,          # ← твой выбор: заказ удаляется вместе с пользователем
-        related_name='user_orders'        # ← теперь можно делать user.user_orders.all()
+        on_delete=models.CASCADE,          
+        related_name='user_orders',
+        null=True,
+        blank=True,
+        verbose_name='Пользователь'
     )
     
     first_name = models.CharField('Имя', max_length=50, default='')
@@ -56,9 +60,13 @@ class Order(models.Model):
         choices=PAYMENT_TYPE_CHOICES,
         default='cash'                  
     )
-
+    class Meta:
+        verbose_name = 'Заказ'
+        verbose_name_plural = 'Заказы'  
+        ordering = ['-created_at']
+        
     def __str__(self):
-        return f'Order #{self.id}'
+        return f'Заказ №{self.id}'
 
     def recalculate_totals(self):
         total_original = Decimal('0')
@@ -117,6 +125,10 @@ class OrderItem(models.Model):
 
     def __str__(self):
         return f"{self.quantity} x {self.product.name} ({self.get_cost:.2f} ₽)"
+    
+    class Meta:
+        verbose_name = ('Позиция заказа')
+        verbose_name_plural = ('Позиции заказа')
 
 
 class Payment(models.Model):
@@ -139,7 +151,7 @@ class Payment(models.Model):
     completed_at = models.DateTimeField(blank=True, null=True, verbose_name='Дата завершения')
 
     def __str__(self):
-        return f'Оплата для заказа #{self.order.id}'
+        return f'Оплата заказа №{self.order.id}'
 
     class Meta:
         verbose_name = 'Платёж'

@@ -26,7 +26,7 @@ DEBUG = True
 ALLOWED_HOSTS = [
     'localhost',
     '127.0.0.1',
-    # Добавьте домен вашего сайта при развёртывании
+   
 ]
 
 # Application definition
@@ -122,18 +122,13 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-# Internationalization
-LANGUAGE_CODE = 'ru-ru'  # Исправлено на русский язык
-
-LANGUAGES = (
-    ('ru', 'Russian'),
-    ('en', 'English'),
-)
-
 MODELTRANSLATION_DEFAULT_LANGUAGE = 'ru'
-MODELTRANSLATION_TRANSLATION_REGISTRY = 'myproject.translation'
-
-TIME_ZONE = 'Europe/Moscow'  # Укажите ваш часовой пояс
+MODELTRANSLATION_TRANSLATION_REGISTRY = 'techstore.translation'
+LANGUAGES = (
+     ('ru', 'Russian'),
+     ('en', 'English'),
+ )
+TIME_ZONE = 'Europe/Moscow'  
 USE_I18N = True
 USE_TZ = True
 

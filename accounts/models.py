@@ -1,11 +1,9 @@
 from django.db import models
 from django.conf import settings
 from products.models import Product
-
-from django.db import models
 from django.contrib.auth import get_user_model
 
-# Эта строка создает переменную User, которую мы будем использовать в ForeignKey
+
 User = get_user_model()
 
 class Favorite(models.Model):
@@ -19,7 +17,12 @@ class Favorite(models.Model):
         'products.Product', 
         on_delete=models.CASCADE
     )
+    class Meta:
+        verbose_name = 'Избранное'
+        verbose_name_plural = 'Избранные товары'  
+        unique_together = ('user', 'product')    
 
+        
     def __str__(self):
         # Защита на случай, если product или user вдруг окажутся пустыми
         user_name = self.user.username if self.user else 'Unknown User'
@@ -73,6 +76,9 @@ class Profile(models.Model):
     user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='profile')
     bio = models.TextField(blank=True, max_length=500, verbose_name='О себе')
     avatar = models.ImageField(upload_to='avatars/', blank=True, null=True, verbose_name='Аватар')
-
+    class Meta:
+        verbose_name = 'Профиль'
+        verbose_name_plural = 'Профили'
     def __str__(self):
         return f'Профиль {self.user.username}'
+    

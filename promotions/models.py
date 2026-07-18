@@ -5,7 +5,10 @@ from decimal import Decimal
 class Promotion(models.Model):
     name = models.CharField("Название акции", max_length=100)
     is_active = models.BooleanField("Активна", default=True)
-    discount_percent = models.PositiveSmallIntegerField("Скидка, %")
+    discount_percent = models.PositiveSmallIntegerField(
+        "Скидка, %",
+        help_text="Введите число от 1 до 100 (например, 15 для скидки 15%)"
+    )
     applies_to_category = models.ForeignKey(
         'products.Category',
         on_delete=models.CASCADE,
@@ -32,3 +35,8 @@ class Promotion(models.Model):
 
     def __str__(self):
         return f"{self.name} ({self.discount_percent}%)"
+    
+    class Meta:
+        verbose_name = 'Акция'
+        verbose_name_plural = 'Акции'
+        ordering = ['-created_at']
