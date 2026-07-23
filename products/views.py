@@ -113,7 +113,7 @@ def product_detail(request, slug):
 
     return render(request, 'products/product_detail.html', {
         'product': product,
-        'category': product.category,  # <-- Добавь эту строку
+        'category': product.category,  
         'form': form,
         'cart': cart,
         'is_favorite': is_favorite
@@ -133,7 +133,6 @@ def product_detail_view(request, slug):
 def category_detail(request, slug):
     category = get_object_or_404(Category, slug=slug, is_active=True)
     products = category.products.filter(is_active=True, available=True)
-    # ... тут можно добавить пагинацию как в catalog_view ...
     return render(request, 'products/category_detail.html', {'category': category, 'products': products})
 
 
@@ -276,7 +275,7 @@ def catalog_view(request):
         products = products.filter(price__lte=max_price)
 
     # Пагинация
-    paginator = Paginator(products, 9)
+    paginator = Paginator(products, 8)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
 
