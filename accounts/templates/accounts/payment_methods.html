@@ -1,13 +1,11 @@
-
 {% extends 'base.html' %}
 
 {% block title %}Способы оплаты — Techstore{% endblock %}
 
 {% block content %}
-     <div class="container my-5">
+    <div class="container my-5">
         <div class="d-flex justify-content-between align-items-center mb-4">
             <h1>Способы оплаты</h1>
-
         </div>
 
         {% if payment_methods %}
@@ -19,18 +17,18 @@
                                 <div class="d-flex justify-content-between align-items-start mb-3">
                                     <div>
                                         <h5 class="card-title mb-1">
-                                            {% if method.card_type == 'visa' %}
-                                                <i class="bi bi-credit-card text-primary"></i> Visa
-                                            {% elif method.card_type == 'mastercard' %}
-                                                <i class="bi bi-credit-card text-warning"></i> MasterCard
+                                            {% if method.payment_type == 'card' %}
+                                                <i class="bi bi-credit-card text-primary"></i> Карта
+                                            {% elif method.payment_type == 'sbp' %}
+                                                <i class="bi bi-bank text-success"></i> СБП
                                             {% else %}
-                                                <i class="bi bi-credit-card text-muted"></i> Карта
+                                                <i class="bi bi-credit-card text-muted"></i> Способ оплаты
                                             {% endif %}
                                         </h5>
-                                        <small class="text-muted fw-bold" aria-label="Последние 4 цифры карты">
-                                            **** **** **** {{ method.last_digits }}
-                                        </small>
+                                        <!-- Выводим готовую маску от YooKassa (например, "4276 00** **** 0000") -->
+                                        <small class="text-muted fw-bold">{{ method.card_mask|default:"Данные скрыты" }}</small>
                                     </div>
+                                    
                                     {% if method.is_default %}
                                         <span class="badge bg-primary rounded-pill" aria-label="Карта по умолчанию">По умолчанию</span>
                                     {% endif %}
@@ -53,6 +51,7 @@
                                             data-card-id="{{ method.id }}"
                                             aria-label="Удалить карту">
                                         Удалить
+                                        <i class="bi bi-trash-fill ms-1"></i>
                                     </button>
                                 </div>
                             </div>
@@ -64,278 +63,92 @@
             <div class="text-center py-5 bg-light rounded">
                 <i class="bi bi-credit-card fs-1 text-muted opacity-50"></i>
                 <h4 class="mt-3 text-muted">Способы оплаты не добавлены</h4>
-
-                {% if payment_methods %}
-                    {% for method in payment_methods %}
-                        <!-- кнопки с data-card-id="{{ method.id }}" -->
-                    {% endfor %}
-                {% else %}
-                    <p>Способы оплаты не добавлены</p>
-                {% endif %}
-
                 <p class="text-muted">Добавьте банковскую карту для быстрой оплаты заказов.</p>
-                <button type="button" class="btn btn-primary mt-3" data-bs-toggle="modal" data-bs-target="#addCardModal">
+                
+                <!-- Кнопка вызывает JS-функцию для виджета YooKassa -->
+                <button type="button" class="btn btn-primary mt-3" onclick="openYooKassaWidget()">
                     Добавить карту
                 </button>
             </div> 
-         {% endif %}
+        {% endif %}
     </div> 
 
- <!-- Модальное окно добавления карты -->
-    <div class="modal fade" id="addCardModal" tabindex="-1" aria-labelledby="addCardModalLabel" aria-hidden="true">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="addCardModalLabel">Добавить банковскую карту</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
-                </div>
-                <form id="addCardForm" action="{% url 'accounts:payment-methods-add' %}" method="POST">
-                    {% csrf_token %}
-                    <div class="modal-body">
-                        <div class="mb-3">
-                            <label for="cardNumber" class="form-label">Номер карты</label>
-                            <input type="tel"
-                                   id="cardNumber"
-                                   name="card_number"
-                                   class="form-control"
-                                   inputmode="numeric"
-                                   pattern="[0-9\s]{13,19}"
-                                   maxlength="19"
-                                   placeholder="1234 5678 9012 3456"
-                                   required
-                                   autocomplete="cc-number">
-                        </div>
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label for="expiryDate" class="form-label">Срок действия (ММ/ГГ)</label>
-                                <input type="text"
-                                       id="expiryDate"
-                                       name="expiry_date"
-                                       class="form-control"
-                                       inputmode="numeric"
-                                       pattern="(0[1-9]|1[0-2])\/[0-9]{2}"
-                                       placeholder="ММ/ГГ"
-                                       required
-                                       autocomplete="cc-exp">
-                            </div>
-                            <div class="col-md-6 mb-3">
-                                <label for="cvv" class="form-label">CVV</label>
-                                <input type="tel"
-                                       id="cvv"
-                                       name="cvv"
-                                       class="form-control"
-                                       inputmode="numeric"
-                                       pattern="[0-9]{3,4}"
-                                       maxlength="4"
-                                       placeholder="123"
-                                       required
-                                       autocomplete="cc-csc">
-                            </div>
-                        </div>
-                        <div class="mb-3 form-check">
-                            <input class="form-check-input" type="checkbox" id="setAsDefault" name="set_as_default" value="1">
-                            <label class="form-check-label" for="setAsDefault">Сделать картой по умолчанию</label>
-                        </div>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
-                        <button type="submit" class="btn btn-primary">Добавить карту</button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    </div>
+    <!-- Скрипт с логикой для кнопок и заглушкой для виджета -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Логика кнопки "Сделать основной"
+            document.querySelectorAll('.set-default-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const cardId = this.getAttribute('data-card-id');
+                    if (!cardId) return;
 
-    
-{% endblock %}
-<script>
-    document.addEventListener('DOMContentLoaded', () => {
-        const modalEl = document.getElementById('addCardModal');
-        if (modalEl) {
-            const modal = new bootstrap.Modal(modalEl);
-            modalEl.addEventListener('shown.bs.modal', () => {
-                const firstInput = modalEl.querySelector('input[type="tel"], input[type="text"]');
-                if (firstInput) {
-                    firstInput.focus();
-                }
+                    fetch(`/api/payment-methods/\${cardId}/set-default/`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRFToken': getCookie('csrftoken')
+                        }
+                    })
+                    .then(response => {
+                        if (response.ok) location.reload();
+                        else alert('Ошибка при установке карты по умолчанию');
+                    })
+                    .catch(err => console.error(err));
+                });
             });
+
+            // Логика кнопки "Удалить"
+            document.querySelectorAll('.delete-card-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const cardId = this.getAttribute('data-card-id');
+                    if (!cardId) return;
+
+                    if (!confirm('Вы уверены, что хотите удалить эту карту?')) return;
+
+                    fetch(`/api/payment-methods/\${cardId}/delete/`, {
+                        method: 'DELETE',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRFToken': getCookie('csrftoken')
+                        }
+                    })
+                    .then(response => {
+                        if (response.ok) location.reload();
+                        else alert('Ошибка при удалении карты');
+                    })
+                    .catch(err => console.error(err));
+                });
+            });
+        });
+
+        // Функция-заглушка для вызова виджета YooKassa
+        function openYooKassaWidget() {
+            // ВАЖНО: Здесь должна быть реальная логика интеграции с YooKassa.
+            // Варианты:
+            // 1. Редирект на endpoint вашего бэкенда, который вернет payment_link от YooKassa.
+            // 2. Открытие iframe/виджета через YooKassa JS SDK.
+            
+            console.log('Здесь будет вызов виджета YooKassa для токенизации карты');
+            alert('Интеграция с YooKassa: откройте виджет или перейдите к оплате.');
+            
+            // Пример редиректа (замените на ваш реальный URL):
+            // window.location.href = '/api/yookassa/create-payment-method/';
         }
 
-        // Удаление карты
-        document.querySelectorAll('.delete-card-btn').forEach(btn => {
-            btn.addEventListener('click', handleDeleteCard);
-        });
-
-        // Установка карты по умолчанию
-        document.querySelectorAll('.set-default-btn').forEach(btn => {
-            btn.addEventListener('click', handleSetDefault);
-        });
-
-        // Обработка формы добавления карты
-        // const addCardForm = document.getElementById('addCardForm');
-        // if (addCardForm) {
-        //     addCardForm.addEventListener('submit', handleAddCard);
-        // }
-    });
-
-    function handleDeleteCard(e) {
-        e.preventDefault();
-        const btn = e.currentTarget;
-        const cardId = btn.getAttribute('data-card-id');
-
-        if (!cardId) {
-            console.error('❌ Нет cardId у кнопки. Проверьте HTML-атрибут data-card-id в DOM (F12 → Elements)');
-            alert('Ошибка: не удалось определить ID карты. Откройте консоль (F12) и посмотрите, есть ли у кнопки атрибут data-card-id.');
-            return;
-        }
-
-        if (!confirm('Вы уверены, что хотите удалить эту карту?')) {
-            return;
-        }
-
-        const originalText = btn.textContent;
-        btn.disabled = true;
-        btn.textContent = 'Удаление...';
-
-        fetch(`/accounts/payment-methods/${cardId}/delete/`, {
-            method: 'POST',
-            headers: {
-                'X-CSRFToken': getCookie('csrftoken'),
-                'Content-Type': 'application/json'
-            }
-        })
-        .then(res => {
-            if (res.ok) {
-                location.reload();
-            } else {
-                console.error('Сервер вернул ошибку:', res.status);
-                alert('Не удалось удалить карту. Проверьте консоль (F12).');
-                btn.disabled = false;
-                btn.textContent = originalText;
-            }
-        })
-        .catch(err => {
-            console.error('Ошибка сети:', err);
-            alert('Произошла ошибка сети при удалении.');
-            btn.disabled = false;
-            btn.textContent = originalText;
-        });
-    }
-
-    function handleSetDefault(e) {
-        e.preventDefault();
-        const btn = e.currentTarget;
-        const cardId = btn.getAttribute('data-card-id');
-
-        if (!cardId) {
-            console.error('❌ Нет cardId для установки по умолчанию');
-            return;
-        }
-
-        const originalText = btn.textContent;
-        btn.disabled = true;
-        btn.textContent = 'Обработка...';
-
-        fetch(`/accounts/payment-methods/${cardId}/set-default/`, {
-            method: 'POST',
-            headers: {
-                'X-CSRFToken': getCookie('csrftoken'),
-                'Content-Type': 'application/json'
-            }
-        })
-        .then(res => {
-            if (res.ok) {
-                location.reload();
-            } else {
-                console.error('Сервер вернул ошибку при установке по умолчанию:', res.status);
-                alert('Не удалось сделать карту основной. Проверьте консоль.');
-                btn.disabled = false;
-                btn.textContent = originalText;
-            }
-        })
-        .catch(err => {
-            console.error('Ошибка сети при установке по умолчанию:', err);
-            alert('Произошла ошибка сети.');
-            btn.disabled = false;
-            btn.textContent = originalText;
-        });
-    }
-
-    function handleAddCard(e) {
-        e.preventDefault();
-        const form = e.target;
-        const submitBtn = form.querySelector('button[type="submit"]');
-        const originalText = submitBtn.textContent;
-
-        submitBtn.disabled = true;
-        submitBtn.textContent = 'Добавление...';
-
-        const formData = new FormData(form);
-        const data = Object.fromEntries(formData.entries());
-
-        fetch(form.action, {
-            method: form.method,
-            headers: {
-                'X-CSRFToken': getCookie('csrftoken'),
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(data)
-        })
-        .then(res => {
-            if (res.ok) {
-                // Успех: закрываем модалку и обновляем страницу
-                const modalEl = document.getElementById('addCardModal');
-                const modal = bootstrap.Modal.getInstance(modalEl);
-                modal.hide();
-                location.reload();
-            } else {
-                return res.json().catch(() => ({}));
-            }
-        })
-        .catch(err => {
-            console.error('Ошибка сети при добавлении карты:', err);
-            alert('Произошла ошибка сети. Проверьте консоль.');
-            submitBtn.disabled = false;
-            submitBtn.textContent = originalText;
-        })
-        .finally(() => {
-            // Восстановление кнопки, если не было редиректа
-            if (!document.hidden) {
-                submitBtn.disabled = false;
-                submitBtn.textContent = originalText;
-            }
-        });
-    }
-
-    function getCookie(name) {
-        let cookieValue = null;
-        if (document.cookie && document.cookie !== '') {
-            const cookies = document.cookie.split(';');
-            for (let i = 0; i < cookies.length; i++) {
-                const cookie = cookies[i].trim();
-                if (cookie.substring(0, name.length + 1) === (name + '=')) {
-                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+        // Вспомогательная функция для получения CSRF-токена из cookie
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
                 }
             }
+            return cookieValue;
         }
-        return cookieValue;
-    }
-
-  function showSuccessMessage() {
-    const urlParams = new URLSearchParams(window.location.search);
-    if (urlParams.get('success') === 'true') {
-      const messageDiv = document.getElementById('message');
-      messageDiv.textContent = 'Карта успешно добавлена!';
-      messageDiv.style.display = 'block';
-
-      // Убираем параметр из URL, чтобы сообщение не показывалось при перезагрузке
-      window.history.replaceState({}, document.title, window.location.pathname);
-    }
-  }
-
-  document.addEventListener('DOMContentLoaded', showSuccessMessage);  
-</script>
-
-
-
-
+    </script>
+{% endblock %}

@@ -2,7 +2,7 @@ from django.db import models
 from django.conf import settings
 from products.models import Product
 from django.contrib.auth import get_user_model
-
+from django.db.models import Q 
 
 User = get_user_model()
 
@@ -51,26 +51,54 @@ class Address(models.Model):
         return f'{self.title} ({self.full_address})'
 
 
-
-
-
 class PaymentMethod(models.Model):
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
         related_name='payment_methods'
     )
-    # ВНИМАНИЕ: Никогда не храните реальные номера карт в открытом виде в БД!
-    # Для примера оставляем, но в продакшене используйте токенизацию (Stripe, YooKassa и т.д.)
-    card_number = models.CharField(max_length=20, verbose_name='Номер карты')
+    # ID способа оплаты в YooKassa (payment_method.id из API)
+    yookassa_payment_method_id = models.CharField(
+        max_length=64,
+        verbose_name='ID способа оплаты в YooKassa',
+        blank=True,
+        null=True,
+        help_text='Токен/ID способа оплаты, возвращаемый YooKassa'
+    )
+    # Тип способа оплаты (карта, СБП, кошелёк и т.п.) — можно брать из ответа API
+    payment_type = models.CharField(
+        max_length=32,
+        verbose_name='Тип способа оплаты',
+        blank=True,
+        null=True
+    )
+    # Маска карты (например, "4276 00** **** 0000") — только для отображения в UI
+    card_mask = models.CharField(
+        max_length=32,
+        verbose_name='Маска карты',
+        blank=True,
+        null=True,
+        help_text='Отображаемая маска карты, без полных данных'
+    )
     is_default = models.BooleanField(default=False, verbose_name='По умолчанию')
 
     class Meta:
         verbose_name = 'Способ оплаты'
         verbose_name_plural = 'Способы оплаты'
+        constraints = [
+            models.UniqueConstraint(
+                fields=['user', 'is_default'],
+                condition=Q(is_default=True),
+                name='unique_default_payment_method_per_user'
+            )
+        ]
 
     def __str__(self):
-        return f"Карта пользователя {self.user.username}"
+        mask = self.card_mask or 'без маски'
+        return f"Способ оплаты пользователя {self.user.username} ({mask})"
+
+
+
  
 class Profile(models.Model):
     user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='profile')

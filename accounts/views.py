@@ -12,7 +12,7 @@ from .models import Profile
 from .forms import UserEditForm, ProfileEditForm
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.http import require_POST
-from django.http import JsonResponse
+
 from django.core.paginator import Paginator
 from django.db.models import Sum
 from .models import Address 
@@ -33,6 +33,14 @@ from django.db.models import Sum, Q
 from decimal import Decimal, ROUND_HALF_UP
 from orders.models import Order
 from django.shortcuts import render, redirect
+# from .services import create_yookassa_payment_method 
+import yookassa
+from django.http import JsonResponse, HttpResponseBadRequest
+from django.views.decorators.csrf import csrf_exempt
+
+
+
+
 logger = logging.getLogger(__name__)
 
 
@@ -268,7 +276,42 @@ def delete_card(request, pk):
     
     return redirect('cards_list')
 
+@login_required
+def create_yookassa_payment_for_card_binding(request):
+    """
+    Создаёт платёж в YooKassa с save_payment_method=True и суммой 0.00
+    для привязки карты. Возвращает URL для редиректа.
+    """
+    try:
+        payment = yookassa.Payment.create({
+            "amount": {
+                "value": "0.00",
+                "currency": "RUB"
+            },
+            "confirmation": {
+                # type=redirect: YooKassa покажет свою форму оплаты
+                "type": "redirect",
+                # return_url: куда вернуть пользователя после ввода карты
+                "return_url": f"{settings.BASE_URL}/accounts/payment-methods/"
+            },
+            # save_payment_method=True: YooKassa сохранит способ оплаты и вернёт payment_method.id
+            "save_payment_method": True,
+            "capture": False,  # Не списывать деньги (т.к. сумма 0)
+            "description": f"Привязка карты для пользователя {request.user.username}"
+        })
 
+        # payment.confirmation.type может быть 'redirect', тогда confirmation.url — это URL редиректа
+        if payment.confirmation and payment.confirmation.type == "redirect":
+            return JsonResponse({
+                "url": payment.confirmation.confirmation_url,
+                "payment_id": payment.id
+            })
+        else:
+            return HttpResponseBadRequest("Некорректный тип подтверждения от YooKassa")
+
+    except Exception as e:
+        # В продакшене логируйте ошибку, а не возвращайте текст исключения
+        return JsonResponse({"error": str(e)}, status=500)
 
 @login_required
 def change_password_view(request):
@@ -320,7 +363,8 @@ def logout_view(request):
 
 @login_required
 def payment_methods_view(request):
-    # Берем только карты текущего пользователя
+    # Берем только способы оплаты текущего пользователя
+    # Теперь здесь будут объекты с полями yookassa_payment_method_id, card_mask и т.д.
     payment_methods = PaymentMethod.objects.filter(user=request.user)
     
     context = {
@@ -329,12 +373,35 @@ def payment_methods_view(request):
     }
     return render(request, 'accounts/payment_methods.html', context)
 
+@login_required
 def payment_methods_add(request):
     if request.method == 'POST':
-        # логика обработки добавления карты
-        return redirect('accounts:payment-methods-add')  # или другое имя URL
-    messages.success(request, 'Карта успешно добавлена')
-    return render(request, 'accounts/profile.html')
+        # 1. Получаем payment_method_id и card_mask от YooKassa.
+        # В реальном проекте это приходит через webhook или ответ API после виджета.
+        # Для примера предположим, что мы получили их из POST (в реальности так не делают из соображений безопасности,
+        # лучше использовать webhook или ответ JS виджета).
+        
+        yookassa_id = request.POST.get('yookassa_payment_method_id')
+        card_mask = request.POST.get('card_mask')
+        payment_type = request.POST.get('payment_type', 'card')
+
+        if yookassa_id:
+            # 2. Сохраняем ТОЛЬКО токен/ID в базу
+            PaymentMethod.objects.create(
+                user=request.user,
+                yookassa_payment_method_id=yookassa_id,
+                card_mask=card_mask,
+                payment_type=payment_type,
+                is_default=True # Можно сделать первой картой дефолтной
+            )
+            messages.success(request, 'Способ оплаты успешно сохранен!')
+            return redirect('accounts:payment-methods') # Редирект на список, а не на себя
+        else:
+            messages.error(request, 'Не удалось получить данные от платежной системы.')
+            return redirect('accounts:payment-methods-add')
+
+    # GET запрос: просто показываем форму (или виджет YooKassa)
+    return render(request, 'accounts/payment_methods_add.html')
 
 
 
