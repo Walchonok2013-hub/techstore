@@ -34,7 +34,7 @@ from decimal import Decimal, ROUND_HALF_UP
 from orders.models import Order
 from django.shortcuts import render, redirect
 # from .services import create_yookassa_payment_method 
-import yookassa
+#import yookassa
 from django.http import JsonResponse, HttpResponseBadRequest
 from django.views.decorators.csrf import csrf_exempt
 
