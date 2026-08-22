@@ -1,0 +1,91 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Редактирование адреса{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">Редактирование адреса</h4>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        <!-- Название адреса -->
+                        <div class="mb-3">
+                            <label for="title" class="form-label">Название адреса (для себя)</label>
+                            <input type="text" 
+                                   class="form-control" 
+                                   id="title" 
+                                   name="title" 
+                                   value="{{ address.title }}" 
+                                   placeholder="Например: Дом, Работа, Офис"
+                                   required>
+                            <small class="text-muted">Это название видите только вы в списке адресов.</small>
+                        </div>
+
+                        <!-- Полный адрес -->
+                        <div class="mb-3">
+                            <label for="full_address" class="form-label">Полный адрес доставки</label>
+                            <input type="text" 
+                                   class="form-control" 
+                                   id="full_address" 
+                                   name="full_address" 
+                                   value="{{ address.full_address }}" 
+                                   placeholder="Город, улица, дом, квартира"
+                                   required>
+                        </div>
+
+                        <!-- Телефон -->
+                        <div class="mb-3">
+                            <label for="phone" class="form-label">Контактный телефон</label>
+                            <input type="tel" 
+                                   class="form-control" 
+                                   id="phone" 
+                                   name="phone" 
+                                   value="{{ address.phone }}" 
+                                   placeholder="+7 (999) 000-00-00"
+                                   required>
+                        </div>
+
+                        <!-- Примечания -->
+                        <div class="mb-3">
+                            <label for="notes" class="form-label">Примечания для курьера</label>
+                            <textarea class="form-control" 
+                                      id="notes" 
+                                      name="notes" 
+                                      rows="3" 
+                                      placeholder="Например: Вход со двора, звонить в домофон 123, оставить у консьержа">{{ address.notes }}</textarea>
+                            <small class="text-muted">Сюда можно вписать код домофона, этаж или особые инструкции.</small>
+                        </div>
+
+                        <!-- Чекбокс "Основной адрес" -->
+                        <div class="mb-4">
+                            <div class="form-check">
+                                <input class="form-check-input" 
+                                       type="checkbox" 
+                                       id="is_default" 
+                                       name="is_default"
+                                       {% if address.is_default %}checked{% endif %}>
+                                <label class="form-check-label" for="is_default">
+                                    Сделать этот адрес основным (по умолчанию)
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Кнопки действий -->
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-success">Сохранить изменения</button>
+                            <a href="{% url 'accounts:profile_addresses' %}" class="btn btn-secondary">Отмена</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

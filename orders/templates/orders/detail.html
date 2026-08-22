@@ -1,0 +1,91 @@
+{% extends "admin/base_site.html" %}
+
+{% block title %}Заказ #{{ order.id }} — Админ-панель{% endblock %}
+
+{% block content %}
+<div class="module">
+    <h1>Детали заказа #{{ order.id }}</h1>
+
+    <div class="form-row">
+        <div class="field-box">
+            <label class="required">Номер заказа:</label>
+            <div class="readonly">{{ order.id }}</div>
+        </div>
+    </div>
+
+    <div class="form-row">
+        <div class="field-box">
+            <label class="required">Статус:</label>
+            <div class="readonly">{{ order.get_status_display }}</div>
+        </div>
+    </div>
+
+    <div class="form-row">
+        <div class="field-box">
+            <label class="required">Дата создания:</label>
+            <div class="readonly">{{ order.created|date:"d.m.Y H:i" }}</div>
+        </div>
+    </div>
+
+    <div class="form-row">
+        <div class="field-box">
+            <label class="required">Имя клиента:</label>
+            <div class="readonly">{{ order.first_name }} {{ order.last_name }}</div>
+        </div>
+    </div>
+
+    <div class="form-row">
+        <div class="field-box">
+            <label class="required">Email:</label>
+            <div class="readonly"><a href="mailto:{{ order.email }}">{{ order.email }}</a></div>
+        </div>
+    </div>
+
+    <div class="form-row">
+        <div class="field-box">
+            <label class="required">Телефон:</label>
+            <div class="readonly">{{ order.phone }}</div>
+        </div>
+    </div>
+
+    <div class="form-row">
+        <div class="field-box">
+            <label class="required">Адрес доставки:</label>
+            <div class="readonly">{{ order.address }}</div>
+        </div>
+    </div>
+
+    <div class="form-row">
+        <div class="field-box">
+            <label class="required">Общая сумма:</label>
+            <div class="readonly">{{ order.total_price }} руб.</div>
+        </div>
+    </div>
+
+    <h2 class="subhead">Состав заказа</h2>
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Товар</th>
+                <th>Количество</th>
+                <th>Цена за шт.</th>
+                <th>Общая цена</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in order.items.all %}
+            <tr>
+                <td>{{ item.product.name }}</td>
+                <td>{{ item.quantity }}</td>
+                <td>{{ item.price }} руб.</td>
+                <td>{{ item.get_cost }} руб.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <div class="submit-row">
+        <a href="{% url 'admin:orders_order_changelist' %}" class="button">Вернуться к списку заказов</a>
+    </div>
+</div>
+{% endblock %}

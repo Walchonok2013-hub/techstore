@@ -1,0 +1,64 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<h2>Мои заказы</h2>
+
+{% if orders %}
+    {% for order in orders %}
+        <div class="card mb-4 shadow-sm border-0">
+            <!-- ИЗМЕНЕННАЯ ВЕРХНЯЯ ЧАСТЬ (HEADER) -->
+            <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+                <div class="d-flex align-items-center gap-3">
+                    <h5 class="mb-0 fw-bold text-dark">Заказ №{{ order.id }}</h5>
+                    
+                    <!-- Бейдж статуса (для наглядности) -->
+                    <span class="badge {% if order.status == 'cancelled' %}bg-danger{% elif order.status == 'paid' %}bg-success{% else %}bg-warning text-dark{% endif %}">
+                        {{ order.get_status_display }}
+                    </span>
+                </div>
+
+                <!-- КНОПКА ОТМЕНЫ: теперь она справа -->
+                {% if order.status == 'new' or order.status == 'pending' %}
+                    <a href="{% url 'orders:cancel_order' order.id %}" 
+                       class="btn btn-outline-danger btn-sm px-3"
+                       onclick="return confirm('Вы уверены, что хотите отменить заказ №{{ order.id }}? Это действие нельзя отменить.');">
+                        Отменить заказ
+                    </a>
+                {% else %}
+                    <button type="button" class="btn btn-sm btn-secondary px-3" disabled>
+                        Отмена недоступна
+                    </button>
+                {% endif %}
+            </div>
+            <!-- КОНЕЦ ИЗМЕНЕННОЙ ЧАСТИ -->
+
+
+<div class="card-body">
+    <div class="d-flex justify-content-between mb-3">
+        <span><strong>Дата:</strong> {{ order.created|date:"d.m.Y H:i" }}</span>
+        <!-- ИСПРАВЛЕНИЕ: используем поле total_price вместо несуществующего метода -->
+        <span><strong>Сумма:</strong> {{ order.total_price|floatformat:2 }} ₽</span>
+    </div>
+    
+    <h6 class="fw-bold mb-2">Состав заказа:</h6>
+    <ul class="list-unstyled mb-3">
+        {% for item in order.items.all %}
+            <li class="d-flex justify-content-between">
+                <span>{{ item.product.name }} x {{ item.quantity }}</span>
+                <!-- Тут можно оставить item.get_cost, если он есть в модели OrderItem, 
+                     либо тоже заменить на расчет: item.price * item.quantity -->
+                <span>{{ item.get_cost|floatformat:2 }} ₽</span>
+            </li>
+        {% endfor %}
+    </ul>
+
+                <a href="{% url 'orders:order_detail_user' order.id %}" class="btn btn-outline-primary btn-sm">
+                    Детали заказа
+                </a>
+            </div>
+        </div>
+    {% endfor %}
+{% else %}
+    <p class="text-muted">У вас пока нет заказов.</p>
+{% endif %}
+{% endblock %}

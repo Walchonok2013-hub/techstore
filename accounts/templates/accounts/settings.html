@@ -1,0 +1,230 @@
+
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Настройки аккаунта{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Стили для страницы настроек */
+    .settings-container {
+        max-width: 800px;
+        margin: 2rem auto;
+    }
+
+    .settings-header {
+        text-align: center;
+        margin-bottom: 2.5rem;
+        padding-bottom: 1.5rem;
+        border-bottom: 2px solid #0d6efd;
+    }
+
+    .settings-card {
+        border: none;
+        border-radius: 1rem;
+        overflow: hidden;
+        transition: transform 0.2s, box-shadow 0.2s;
+        margin-bottom: 1.5rem;
+    }
+
+    .settings-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+    }
+
+    .settings-card-header {
+        background: linear-gradient(135deg, #0d6efd, #0a58ca);
+        color: white;
+        font-weight: 600;
+        padding: 1.25rem 1.5rem;
+        display: flex;
+        align-items: center;
+    }
+
+    .settings-icon {
+        margin-right: 0.75rem;
+        font-size: 1.3rem;
+    }
+
+    .settings-card-body {
+        padding: 1.75rem;
+    }
+
+    .form-label {
+        font-weight: 500;
+        margin-bottom: 0.5rem;
+        color: #495057;
+    }
+
+    .form-control {
+        border-radius: 0.5rem;
+        border: 1px solid #ced4da;
+        padding: 0.75rem 1rem;
+        transition: border-color 0.2s;
+    }
+
+    .form-control:focus {
+        border-color: #0d6efd;
+        box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
+    }
+
+    .btn-primary {
+        background-color: #0d6efd;
+        border-color: #0d6efd;
+        padding: 0.75rem 2rem;
+        border-radius: 0.5rem;
+        font-weight: 500;
+        transition: all 0.2s;
+    }
+
+    .btn-primary:hover {
+        background-color: #0b5ed7;
+        border-color: #0a5ac5;
+    }
+
+    .back-link {
+        display: inline-flex;
+        align-items: center;
+        color: #6c757d;
+        text-decoration: none;
+        font-weight: 500;
+        transition: color 0.2s;
+        margin-top: 1.5rem;
+    }
+
+    .back-link:hover {
+        color: #0d6efd;
+    }
+
+    .back-icon {
+        margin-right: 0.5rem;
+        font-size: 1.1rem;
+    }
+
+    /* Адаптивность */
+    @media (max-width: 768px) {
+        .settings-container {
+            margin: 1rem auto;
+        }
+        
+        .settings-card-body {
+            padding: 1.25rem;
+        }
+        
+        .btn-primary {
+            width: 100%;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container settings-container">
+    <!-- Заголовок страницы */-->
+    <div class="settings-header">
+        <h1 class="display-5 text-center">Настройки аккаунта</h1>
+        <p class="text-muted text-center mb-0">Измените настройки вашего профиля</p>
+    </div>
+
+    <!-- Карточка основных настроек */-->
+    <div class="card settings-card">
+        <div class="card-header settings-card-header">
+            <i class="bi bi-person-fill settings-icon"></i>
+            <h3 class="mb-0">Основная информация</h3>
+        </div>
+        <div class="card-body settings-card-body">
+            <form method="post">
+                {% csrf_token %}
+                <div class="mb-3">
+                    <label for="username" class="form-label">Имя пользователя</label>
+            <input type="text" class="form-control" id="username"
+                   value="{{ user.username }}" placeholder="Введите имя пользователя">
+                </div>
+                
+                <div class="mb-3">
+            <label for="email" class="form-label">Email адрес</label>
+            <input type="email" class="form-control" id="email"
+                   value="{{ user.email }}" placeholder="Введите email">
+                </div>
+                
+                <div class="mb-4">
+            <label for="bio" class="form-label">О себе</label>
+            <textarea class="form-control" id="bio" rows="3"
+                placeholder="Расскажите о себе">{{ user.bio|default:"" }}</textarea>
+                </div>
+                
+                <button type="submit" class="btn btn-primary">Сохранить изменения</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Карточка смены пароля */-->
+    <div class="card settings-card">
+        <div class="card-header settings-card-header">
+            <i class="bi bi-lock-fill settings-icon"></i>
+            <h3 class="mb-0">Безопасность</h3>
+        </div>
+        <div class="card-body settings-card-body">
+            <form method="post">
+                {% csrf_token %}
+                <div class="mb-3">
+            <label for="current-password" class="form-label">Текущий пароль</label>
+            <input type="password" class="form-control" id="current-password"
+                   placeholder="Введите текущий пароль">
+                </div>
+                
+                <div class="mb-3">
+            <label for="new-password" class="form-label">Новый пароль</label>
+            <input type="password" class="form-control" id="new-password"
+                   placeholder="Введите новый пароль">
+                </div>
+                
+                <div class="mb-4">
+            <label for="confirm-password" class="form-label">Подтвердите новый пароль</label>
+            <input type="password" class="form-control" id="confirm-password"
+                   placeholder="Повторите новый пароль">
+                </div>
+                
+                <button type="submit" class="btn btn-primary">Сменить пароль</button>
+            </form>
+        </div>
+    </div>
+
+  
+    <div class="card settings-card">
+        <div class="card-header settings-card-header">
+            <i class="bi bi-bell-fill settings-icon"></i>
+            <h3 class="mb-0">Уведомления</h3>
+        </div>
+        <div class="card-body settings-card-body">
+            <div class="form-check mb-2">
+                <input class="form-check-input" type="checkbox" id="email-notifications" checked>
+                <label class="form-check-label" for="email-notifications">
+                    Email уведомления
+                </label>
+            </div>
+            
+            <div class="form-check mb-2">
+                <input class="form-check-input" type="checkbox" id="push-notifications">
+                <label class="form-check-label" for="push-notifications">
+            Push уведомления
+                </label>
+            </div>
+            
+            <div class="form-check">
+                <input class="form-check-input" type="checkbox" id="marketing-notifications" checked>
+                <label class="form-check-label" for="marketing-notifications">
+            Маркетинговые рассылки
+                </label>
+            </div>
+        </div>
+    </div>
+        <!-- Ссылка назад -->
+    <div class="text-center mt-4">
+        <a href="{% url 'accounts:profile' %}" class="back-link">
+            <i class="bi bi-arrow-left back-icon"></i>
+            Назад к профилю
+        </a>
+    </div>
+</div> <!-- Закрытие контейнера settings-container -->
+{% endblock %}

@@ -1,0 +1,36 @@
+{% extends 'base.html' %}
+
+{% block title %}Карты — Личный кабинет{% endblock %}
+
+{% block content %}
+<div class="container my-5">
+  <h1>Ваши карты</h1>
+  <a href="{% url 'add_card' %}" class="btn btn-primary mb-4">Добавить карту</a>
+
+  {% if cards %}
+    <div class="row">
+      {% for card in cards %}
+        <div class="col-md-4 mb-4">
+          <div class="card">
+            <div class="card-body">
+              <h5 class="card-title">{{ card.brand }} ****{{ card.card_last_four }}</h5>
+              <p class="card-text">
+                Срок: {{ card.expiry_month }}/{{ card.expiry_year }}
+              </p>
+              {% if card.is_default %}
+                <span class="badge bg-success">По умолчанию</span>
+              {% endif %}
+              <form action="{% url 'delete_card' card.pk %}" method="post" style="margin-top: 1rem;">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-danger btn-sm"{{ card.id }}>Удалить карту</button>
+              </form>
+            </div>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+  {% else %}
+    <p>У вас пока нет привязанных карт.</p>
+  {% endif %}
+</div>
+{% endblock %}

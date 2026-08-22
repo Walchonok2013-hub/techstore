@@ -1,0 +1,124 @@
+    .about-page h1 {
+        font-weight: 700;
+        color: #1a1a1a;
+        margin-bottom: 0.5rem;
+    }
+
+    .about-page .lead {
+        color: #6c757d;
+        max-width: 700px;
+    }
+
+    .about-page h2 {
+        font-weight: 600;
+        color: #1a1a1a;
+        margin-top: 2.5rem;
+        margin-bottom: 1.25rem;
+        border-bottom: 2px solid #eee;
+        display: inline-block;
+        padding-bottom: 0.5rem;
+    }
+
+    .about-page ul {
+        list-style: none;
+        padding: 0;
+        margin-top: 1rem;
+    }
+
+    .about-page ul li {
+        position: relative;
+        padding-left: 24px;
+        margin-bottom: 0.75rem;
+        color: #333;
+        line-height: 1.5;
+    }
+
+    .about-page ul li::before {
+        content: "•";
+        color: #0d6efd; /* Цвет точки как у text-primary в Bootstrap */
+        font-weight: bold;
+        position: absolute;
+        left: 0;
+        top: 0;
+    }
+
+    .about-page .card {
+       
+        border: none;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+        border-radius: 12px;
+        height: 100%;
+    }
+
+    .about-page .card-body {
+        padding: 1.5rem;
+    }
+
+    .about-page .card-title {
+        font-weight: 600;
+        color: #1a1a1a;
+        margin-bottom: 0.75rem;
+    }
+
+    .about-page .card-text {
+        color: #555;
+        line-height: 1.6;
+    }
+
+    .about-page hr {
+        border-top: 1px solid #eee;
+        margin: 3rem 0;
+    }
+
+    .about-page .feature-box {
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .about-page .feature-box:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
+    }
+
+    .about-page .feature-box h4 {
+        color: #0c0c0c;
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+    }
+
+    .about-page .feature-box p {
+        color: #6c757d;
+        font-size: 0.95rem;
+        margin: 0;
+    }
+/* --- Стили для блока-обёртки фото --- */
+.about-page .hero-image-wrapper {
+    position: relative;
+    width: 100%;
+    height: 500px; /* Фиксированная высота для вертикального заполнения */
+    overflow: hidden; /* Обрезает всё, что выходит за границы */
+    border-radius: 12px; /* Скругление под стиль ваших карточек */
+    background-color: #f8f9fa; /* Цвет фона-заглушки */
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05); /* Тень как у ваших карточек */
+}
+
+/* --- Стили для самой картинки --- */
+.about-page .hero-image-wrapper img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover; /* Заполняет блок, обрезая лишнее, но не сплющивая фото */
+    display: block;
+    transition: transform 0.5s cubic-bezier(0.25, 1, 0.5, 1);
+}
+
+/* --- Эффект при наведении (зум) --- */
+.about-page .hero-image-wrapper:hover img {
+    transform: scale(1.08); /* Увеличение на 8% */
+}
+
+/* --- Адаптивность для мобильных устройств --- */
+@media (max-width: 768px) {
+    .about-page .hero-image-wrapper {
+        height: 350px; /* Уменьшаем высоту на мобильных */
+        border-radius: 0; /* На мобильных можно убрать скругление */
+    }
+}

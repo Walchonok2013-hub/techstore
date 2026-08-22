@@ -1,0 +1,19 @@
+
+<!-- techstore/templates/includes/notifications.html -->
+<div id="user-notifications">
+  <!-- Уведомления о действиях с корзиной -->
+  {% if request.session.cart_updated %}
+  <div class="alert alert-success alert-dismissible fade show" role="alert">
+    Товар успешно добавлен в корзину!
+    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+  </div>
+  {% endif %}
+
+  <!-- Уведомления об ошибках авторизации -->
+  {% if request.GET.error == 'auth' %}
+  <div class="alert alert-danger alert-dismissible fade show" role="alert">
+    Ошибка авторизации. Проверьте логин и пароль.
+    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+  </div>
+  {% endif %}
+</div>

@@ -1,0 +1,204 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Главная — TechStore{% endblock %}
+
+{% block content %}
+
+<!-- Приветственный баннер -->
+<section class="welcome-banner text-center mb-5">
+    <h1 class="display-4 mb-3">Добро пожаловать в наш магазин "Techstore"!</h1>
+    <p class="lead text-muted mb-4">Лучшие товары по выгодным ценам</p>
+    <a href="{% url 'products:catalog' %}" class="btn btn-primary btn-lg px-5 rounded-pill">Перейти в каталог</a>
+</section>
+
+<!-- Популярные товары -->
+<section class="popular-products mb-5">
+    <div class="row justify-content-center mb-4">
+        <div class="col-lg-8">
+            <h2 class="text-center text-primary">Популярные товары</h2>
+        </div>
+    </div>
+    
+    <div class="row">
+        {% for product in popular_products %}
+            <div class="col-lg-4 col-md-6 col-sm-12 mb-4">
+                <div class="card h-100 shadow-sm border-0 rounded-3 overflow-hidden d-flex flex-column">
+                    {% if product.image %}
+                        <img src="{{ product.image.url }}" alt="{{ product.name }}" class="w-100" style="height: 250px; object-fit: cover;">
+                    {% else %}
+                        <div class="bg-light d-flex align-items-center justify-content-center" style="height: 250px;">Нет фото</div>
+                    {% endif %}
+                    
+                    <div class="card-body d-flex flex-column">
+                        <h5 class="card-title text-dark fw-bold">{{ product.name }}</h5>
+                        <p class="card-text text-success h5 mb-4 fw-bold">{{ product.price }} руб.</p>
+                        
+                        <a href="{% url 'products:product_detail' product.slug %}"
+                           class="btn btn-outline-primary mt-auto align-self-center rounded-pill">
+                            Подробнее
+                        </a> 
+                    </div>
+                </div>
+            </div>
+        {% empty %}
+            <div class="col-12 text-center py-5">
+                <p class="text-muted">Пока нет популярных товаров.</p>
+            </div>
+        {% endfor %}
+    </div>
+</section>
+
+<!-- Акции -->
+<section class="promotions mb-5">
+    <div class="alert alert-warning shadow-sm">
+        <h4 class="mb-2">🔥 Скидка 20% на все смартфоны!</h4>
+        <p class="mb-3">Только до конца месяца — покупайте смартфоны со скидкой 20%.</p>
+        <a href="{% url 'products:category_detail' 'smartfony-i-aksessuary' %}" class="btn btn-warning text-dark fw-bold">Смотреть смартфоны</a>   
+    </div>
+</section>
+
+<!-- О нас -->
+<section class="about-us">
+    <div class="text-center mb-4">
+        <h2 class="fw-normal text-dark">Почему выбирают нас?</h2>
+        <p class="text-muted">Мы предлагаем:</p>
+    </div>
+    
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <ul class="list-unstyled d-flex justify-content-around text-center">
+                <li>
+                    <i class="fas fa-shield-alt fa-2x text-primary mb-2"></i>
+                    <p class="fw-bold">Гарантия качества</p>
+                </li>
+                <li>
+                    <i class="fas fa-truck fa-2x text-primary mb-2"></i>
+                    <p class="fw-bold">Быстрая доставка</p>
+                </li>
+                <li>
+                    <i class="fas fa-undo fa-2x text-primary mb-2"></i>
+                    <p class="fw-bold">Удобный возврат</p>
+                </li>
+                <li>
+                    <i class="fas fa-headset fa-2x text-primary mb-2"></i>
+                    <p class="fw-bold">Поддержка 24/7</p>
+                </li>
+            </ul>
+        </div>
+    </div>
+</section>
+
+{% endblock %}
+
+{% comment %} 
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Главная — Магазин{% endblock %}
+
+{% block extra_css %}
+    <link rel="stylesheet" type="text/css" href="{% static 'css/style.css' %}">
+{% endblock %}
+
+{% block content %}
+
+
+<div class="container mt-5">
+<!-- Приветственный баннер -->
+<section class="welcome-banner text-center mb-5">
+<h1 class="display-4 mb-5">Добро пожаловать в наш магазин "Techstore"!</h1>
+<p class="lead mb-4">Лучшие товары по выгодным ценам</p>
+<a href="{% url 'products:catalog' %}" class="btn btn-primary btn-lg" style="background-color: #4a7bca">Перейти в каталог</a>
+</section>
+
+
+
+ <!-- Популярные товары -->
+<section class="popular-products mb-5">
+  <div class="row justify-content-center">
+    <div class="col-lg-8 text-center">
+      <h2 class="mb-4 text-primary font-weight-bold">Популярные товары</h2>
+    </div>
+  </div>
+  <div class="row">
+    {% for product in popular_products %}
+      <div class="col-lg-4 col-md-6 col-sm-12 mb-4">
+        <div class="card h-100 shadow border-0 rounded-3 overflow-hidden d-flex flex-column">
+          {% if product.image %}
+            <img src="{{ product.image.url }}"
+                 alt="{{ product.name }}"
+                 class="card-img-top"
+                 style="height: 200px; object-fit: cover;">
+          {% else %}
+            <div class="card-img-top bg-light d-flex align-items-center justify-content-center"
+                 style="height: 200px;">
+              <i class="fas fa-image fa-2x text-muted"></i>
+            </div>
+          {% endif %}
+          
+          <!-- ГЛАВНОЕ ИЗМЕНЕНИЕ: d-flex flex-column + mt-auto для кнопки -->
+          <div class="card-body d-flex flex-column">
+            <h5 class="card-title mb-3 text-dark font-weight-bold">{{ product.name }}</h5>
+            <p class="card-text text-success h5 mb-4">{{ product.price }} руб.</p>
+            
+            <a href="{% url 'products:product_detail' product.slug %}"
+               class="btn btn-outline-primary mt-auto align-self-center">
+              Подробнее
+            </a> 
+          </div>
+        </div>
+      </div>
+    {% empty %}
+      <div class="col-12">
+        <p class="text-muted text-center">Пока нет популярных товаров.</p>
+      </div>
+    {% endfor %}
+  </div>
+</section> ы
+
+<!-- Акции -->
+
+<section class="promotions mb-5">
+<div class="col-lg-8 mx-auto text-center">  
+<h2 class="mb-4">Акции и скидки</h2>
+</div>
+<div class="alert alert-warning">
+<h4>Скидка 20 % на все смартфоны!</h4>
+<p>Только до конца месяца — покупайте смартфоны со скидкой 20 %.</p>
+
+
+<a href="{% url 'products:category_detail' 'smartfony-i-aksessuary' %}" class="btn btn-warning" style="background-color: #ffd752;">
+    Смотреть смартфоны
+</a>   
+</div>
+    <!-- О нас -->
+<section class="about-us mb-5">
+    <div class="text-center mb-4">
+        <h2 class="font-weight-normal" style="color: #1e293b; font-size: 24px; margin-bottom: 8px;">Почему выбирают нас?</h2>
+        <p style="color: #64748b; font-size: 16px; margin-bottom: 24px;">Мы предлагаем:</p>
+    </div>
+    
+    <ul class="features-list mx-auto" style="max-width: 180px; color: #405169;">
+        <li>Гарантия качества</li>
+        <li>Быстрая доставка</li>
+        <li>Удобный возврат</li>
+        <li>Поддержка 24/7</li>
+    </ul>
+</section>
+
+</div>
+</div>
+</div>
+{% endblock %} 
+{% load cache %}
+{% load category_tags %}
+{% load user_carts %}  {% endcomment %}
+
+
+
+
+
+
+
+

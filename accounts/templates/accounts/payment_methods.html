@@ -1,0 +1,154 @@
+{% extends 'base.html' %}
+
+{% block title %}Способы оплаты — Techstore{% endblock %}
+
+{% block content %}
+    <div class="container my-5">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1>Способы оплаты</h1>
+        </div>
+
+        {% if payment_methods %}
+            <div class="row g-4">
+                {% for method in payment_methods %}
+                    <div class="col-12 col-md-6">
+                        <div class="card border-0 shadow-sm h-100 payment-method-card">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between align-items-start mb-3">
+                                    <div>
+                                        <h5 class="card-title mb-1">
+                                            {% if method.payment_type == 'card' %}
+                                                <i class="bi bi-credit-card text-primary"></i> Карта
+                                            {% elif method.payment_type == 'sbp' %}
+                                                <i class="bi bi-bank text-success"></i> СБП
+                                            {% else %}
+                                                <i class="bi bi-credit-card text-muted"></i> Способ оплаты
+                                            {% endif %}
+                                        </h5>
+                                        <!-- Выводим готовую маску от YooKassa (например, "4276 00** **** 0000") -->
+                                        <small class="text-muted fw-bold">{{ method.card_mask|default:"Данные скрыты" }}</small>
+                                    </div>
+                                    
+                                    {% if method.is_default %}
+                                        <span class="badge bg-primary rounded-pill" aria-label="Карта по умолчанию">По умолчанию</span>
+                                    {% endif %}
+                                </div>
+
+                                <div class="d-flex flex-wrap gap-2">
+                                    {% if not method.is_default %}
+                                        <button type="button"
+                                                class="btn btn-sm btn-outline-primary set-default-btn"
+                                                data-card-id="{{ method.id }}"
+                                                aria-label="Сделать основной">
+                                            Сделать основной
+                                        </button>
+                                    {% else %}
+                                        <span class="btn btn-sm btn-light text-muted" tabindex="-1" aria-disabled="true">Основная</span>
+                                    {% endif %}
+
+                                    <button type="button"
+                                            class="btn btn-sm btn-outline-danger delete-card-btn"
+                                            data-card-id="{{ method.id }}"
+                                            aria-label="Удалить карту">
+                                        Удалить
+                                        <i class="bi bi-trash-fill ms-1"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="text-center py-5 bg-light rounded">
+                <i class="bi bi-credit-card fs-1 text-muted opacity-50"></i>
+                <h4 class="mt-3 text-muted">Способы оплаты не добавлены</h4>
+                <p class="text-muted">Добавьте банковскую карту для быстрой оплаты заказов.</p>
+                
+                <!-- Кнопка вызывает JS-функцию для виджета YooKassa -->
+                <button type="button" class="btn btn-primary mt-3" onclick="openYooKassaWidget()">
+                    Добавить карту
+                </button>
+            </div> 
+        {% endif %}
+    </div> 
+
+    <!-- Скрипт с логикой для кнопок и заглушкой для виджета -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Логика кнопки "Сделать основной"
+            document.querySelectorAll('.set-default-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const cardId = this.getAttribute('data-card-id');
+                    if (!cardId) return;
+
+                    fetch(`/api/payment-methods/\${cardId}/set-default/`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRFToken': getCookie('csrftoken')
+                        }
+                    })
+                    .then(response => {
+                        if (response.ok) location.reload();
+                        else alert('Ошибка при установке карты по умолчанию');
+                    })
+                    .catch(err => console.error(err));
+                });
+            });
+
+            // Логика кнопки "Удалить"
+            document.querySelectorAll('.delete-card-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const cardId = this.getAttribute('data-card-id');
+                    if (!cardId) return;
+
+                    if (!confirm('Вы уверены, что хотите удалить эту карту?')) return;
+
+                    fetch(`/api/payment-methods/\${cardId}/delete/`, {
+                        method: 'DELETE',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRFToken': getCookie('csrftoken')
+                        }
+                    })
+                    .then(response => {
+                        if (response.ok) location.reload();
+                        else alert('Ошибка при удалении карты');
+                    })
+                    .catch(err => console.error(err));
+                });
+            });
+        });
+
+        // Функция-заглушка для вызова виджета YooKassa
+        function openYooKassaWidget() {
+            // ВАЖНО: Здесь должна быть реальная логика интеграции с YooKassa.
+            // Варианты:
+            // 1. Редирект на endpoint вашего бэкенда, который вернет payment_link от YooKassa.
+            // 2. Открытие iframe/виджета через YooKassa JS SDK.
+            
+            console.log('Здесь будет вызов виджета YooKassa для токенизации карты');
+            alert('Интеграция с YooKassa: откройте виджет или перейдите к оплате.');
+            
+            // Пример редиректа (замените на ваш реальный URL):
+            // window.location.href = '/api/yookassa/create-payment-method/';
+        }
+
+        // Вспомогательная функция для получения CSRF-токена из cookie
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+    </script>
+{% endblock %}

@@ -1,0 +1,94 @@
+
+{% extends "base.html" %}
+
+{% load static %}
+
+{% block title %}{{ product.name }} - Магазин{% endblock %}
+
+
+{% block content %}
+<div class="product-detail">
+  <h1>{{ product.name }}</h1>
+
+  <div class="row">
+    <div class="col-md-6">
+      {% if product.image %}
+        <img src="{{ product.image.url }}"
+             alt="{{ product.name }}"
+             class="img-fluid rounded">
+      {% else %}
+        <div class="no-image text-center p-5 bg-light rounded">
+          <i class="fas fa-image fa-3x text-muted"></i>
+          <p class="mt-2">Изображение отсутствует</p>
+        </div>
+      {% endif %}
+    </div>
+
+    <div class="col-md-6">
+      <div class="price h3 text-success">
+        {{ product.price }} руб.
+      </div>
+
+      <p class="text-muted">{{ product.get_category_display }}</p>
+
+      {% if product.stock > 0 %}
+        <p class="text-success">
+          <i class="fas fa-check"></i> В наличии: {{ product.stock }} шт.
+        </p>
+      {% else %}
+        <p class="text-danger">
+          <i class="fas fa-times"></i> Нет в наличии
+        </p>
+      {% endif %}
+
+      <hr>
+
+      <form action="{% url 'cart:add' product.id %}" method="post">
+        {% csrf_token %}
+        <div class="form-group mb-3">
+          <label for="quantity">Количество:</label>
+          <input type="number"
+                 name="quantity"
+                 value="1"
+                 min="1"
+                 max="{{ product.stock }}"
+                 class="form-control"
+                 id="quantity">
+        </div>
+        <button type="submit" class="btn btn-primary btn-lg">
+          <i class="fas fa-shopping-cart"></i> Добавить в корзину
+        </button>
+      </form>
+
+      <hr>
+      <div class="social-share mt-3">
+        <a href="#" class="btn btn-outline-secondary btn-sm">
+          <i class="fab fa-vk"></i> Поделиться
+        </a>
+        <a href="#" class="btn btn-outline-secondary btn-sm">
+          <i class="fab fa-telegram"></i> Отправить
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <div class="row mt-4">
+    <div class="col-12">
+      <h3>Описание</h3>
+      <div class="description">
+        {{ product.description|linebreaks }}
+      </div>
+
+      {% if product.specifications %}
+        <h3 class="mt-4">Характеристики</h3>
+        <dl class="row">
+          {% for key, value in product.specifications.items %}
+            <dt class="col-sm-3">{{ key }}</dt>
+            <dd class="col-sm-9">{{ value }}</dd>
+          {% endfor %}
+        </dl>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

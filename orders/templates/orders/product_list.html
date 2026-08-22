@@ -1,0 +1,26 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Товары</title>
+</head>
+<body>
+    <h1>Список товаров</h1>
+    {% if products %}
+        <ul>
+            {% for product in products %}
+                <li>
+                    {{ product.name }} — {{ product.price }} руб.
+                    {% if product.in_stock %}
+                        <span style="color: green;">(в наличии)</span>
+            {% else %}
+                <span style="color: red;">(нет в наличии)</span>
+            {% endif %}
+                </li>
+            {% endfor %}
+        </ul>
+    {% else %}
+        <p>Товары не найдены.</p>
+    {% endif %}
+</body>
+</html>
